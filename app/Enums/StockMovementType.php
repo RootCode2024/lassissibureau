@@ -2,218 +2,203 @@
 
 namespace App\Enums;
 
+/**
+ * Type de mouvement de stock (historique)
+ */
 enum StockMovementType: string
 {
-    // Entrées de stock
+    // Entrées
     case RECEPTION_FOURNISSEUR = 'reception_fournisseur';
+    case TROC_RECU = 'troc_recu'; // Téléphone reçu en échange
+    case RETOUR_REVENDEUR = 'retour_revendeur';
     case RETOUR_CLIENT = 'retour_client';
-    case CORRECTION_INVENTAIRE_PLUS = 'correction_inventaire_plus';
+    case RETOUR_REPARATION = 'retour_reparation'; // Retour de réparation
 
-        // Sorties de stock
-    case VENTE = 'vente';
+        // Sorties
+    case VENTE_DIRECTE = 'vente_directe';
+    case VENTE_TROC = 'vente_troc'; // Vente avec troc
+    case DEPOT_REVENDEUR = 'depot_revendeur';
+    case ECHANGE_RETOUR = 'echange_retour'; // Échange suite retour client
+    case ENVOI_REPARATION = 'envoi_reparation';
+    case RETOUR_FOURNISSEUR = 'retour_fournisseur';
+
+        // Pertes
     case CASSE = 'casse';
     case VOL = 'vol';
     case PERTE = 'perte';
-    case RETOUR_FOURNISSEUR = 'retour_fournisseur';
-    case CORRECTION_INVENTAIRE_MOINS = 'correction_inventaire_moins';
-    case ECHEANCE = 'echeance'; // Produits périmés
-    case ECHANTILLON = 'echantillon'; // Échantillons gratuits
 
-        // Consignation revendeurs
-    case DEPOT_REVENDEUR = 'depot_revendeur'; // Revendeur prend des produits
-    case RETOUR_REVENDEUR = 'retour_revendeur'; // Revendeur ramène des invendus
+        // Corrections
+    case CORRECTION_PLUS = 'correction_plus';
+    case CORRECTION_MOINS = 'correction_moins';
 
-    /**
-     * Détermine si ce type augmente le stock
-     */
     public function isIncrement(): bool
     {
         return in_array($this, [
             self::RECEPTION_FOURNISSEUR,
+            self::TROC_RECU,
+            self::RETOUR_REVENDEUR,
             self::RETOUR_CLIENT,
-            self::CORRECTION_INVENTAIRE_PLUS,
-            self::RETOUR_REVENDEUR, // Revendeur ramène des invendus
+            self::RETOUR_REPARATION,
+            self::CORRECTION_PLUS,
         ]);
     }
 
-    /**
-     * Détermine si ce type diminue le stock
-     */
     public function isDecrement(): bool
     {
         return !$this->isIncrement();
     }
 
-    /**
-     * Obtenir le label français
-     */
     public function label(): string
     {
         return match ($this) {
             self::RECEPTION_FOURNISSEUR => 'Réception fournisseur',
+            self::TROC_RECU => 'Téléphone reçu en troc',
+            self::RETOUR_REVENDEUR => 'Retour revendeur',
             self::RETOUR_CLIENT => 'Retour client',
-            self::CORRECTION_INVENTAIRE_PLUS => 'Correction inventaire (+)',
-            self::VENTE => 'Vente',
+            self::RETOUR_REPARATION => 'Retour de réparation',
+            self::VENTE_DIRECTE => 'Vente directe',
+            self::VENTE_TROC => 'Vente avec troc',
+            self::DEPOT_REVENDEUR => 'Dépôt revendeur',
+            self::ECHANGE_RETOUR => 'Échange suite retour',
+            self::ENVOI_REPARATION => 'Envoi en réparation',
+            self::RETOUR_FOURNISSEUR => 'Retour fournisseur',
             self::CASSE => 'Casse',
             self::VOL => 'Vol',
             self::PERTE => 'Perte',
-            self::RETOUR_FOURNISSEUR => 'Retour fournisseur',
-            self::CORRECTION_INVENTAIRE_MOINS => 'Correction inventaire (-)',
-            self::ECHEANCE => 'Produit périmé',
-            self::ECHANTILLON => 'Échantillon gratuit',
-            self::DEPOT_REVENDEUR => 'Dépôt revendeur',
-            self::RETOUR_REVENDEUR => 'Retour revendeur',
+            self::CORRECTION_PLUS => 'Correction (+)',
+            self::CORRECTION_MOINS => 'Correction (-)',
         };
     }
 
-    /**
-     * Obtenir la couleur badge pour l'UI
-     */
     public function color(): string
     {
         return match ($this) {
             self::RECEPTION_FOURNISSEUR,
+            self::RETOUR_REVENDEUR,
             self::RETOUR_CLIENT,
-            self::RETOUR_REVENDEUR => 'green',
+            self::RETOUR_REPARATION,
+            self::TROC_RECU => 'green',
 
-            self::VENTE => 'blue',
+            self::VENTE_DIRECTE,
+            self::VENTE_TROC => 'blue',
+
+            self::DEPOT_REVENDEUR,
+            self::ECHANGE_RETOUR => 'orange',
+
+            self::ENVOI_REPARATION => 'yellow',
 
             self::CASSE,
             self::VOL,
             self::PERTE,
-            self::ECHEANCE => 'red',
+            self::RETOUR_FOURNISSEUR => 'red',
 
-            self::RETOUR_FOURNISSEUR,
-            self::ECHANTILLON,
-            self::DEPOT_REVENDEUR => 'orange',
-
-            self::CORRECTION_INVENTAIRE_PLUS,
-            self::CORRECTION_INVENTAIRE_MOINS => 'purple',
+            self::CORRECTION_PLUS,
+            self::CORRECTION_MOINS => 'purple',
         };
     }
 
-    /**
-     * Obtenir l'icône pour l'UI
-     */
     public function icon(): string
     {
         return match ($this) {
             self::RECEPTION_FOURNISSEUR => 'truck',
+            self::TROC_RECU => 'repeat',
+            self::RETOUR_REVENDEUR => 'package-plus',
             self::RETOUR_CLIENT => 'arrow-left-circle',
-            self::VENTE => 'shopping-cart',
+            self::RETOUR_REPARATION => 'wrench',
+            self::VENTE_DIRECTE => 'shopping-cart',
+            self::VENTE_TROC => 'shuffle',
+            self::DEPOT_REVENDEUR => 'package-minus',
+            self::ECHANGE_RETOUR => 'refresh-cw',
+            self::ENVOI_REPARATION => 'tool',
+            self::RETOUR_FOURNISSEUR => 'arrow-right-circle',
             self::CASSE => 'trash-2',
             self::VOL => 'alert-triangle',
             self::PERTE => 'x-circle',
-            self::RETOUR_FOURNISSEUR => 'arrow-right-circle',
-            self::CORRECTION_INVENTAIRE_PLUS,
-            self::CORRECTION_INVENTAIRE_MOINS => 'edit',
-            self::ECHEANCE => 'calendar-x',
-            self::ECHANTILLON => 'gift',
-            self::DEPOT_REVENDEUR => 'package-minus',
-            self::RETOUR_REVENDEUR => 'package-plus',
+            self::CORRECTION_PLUS,
+            self::CORRECTION_MOINS => 'edit',
         };
     }
 
-    /**
-     * Nécessite une justification obligatoire
-     */
     public function requiresJustification(): bool
     {
         return in_array($this, [
             self::CASSE,
             self::VOL,
             self::PERTE,
-            self::CORRECTION_INVENTAIRE_PLUS,
-            self::CORRECTION_INVENTAIRE_MOINS,
+            self::CORRECTION_PLUS,
+            self::CORRECTION_MOINS,
         ]);
     }
 
     /**
-     * Types accessibles par le vendeur
+     * Types nécessitant un IMEI
      */
-    public static function forVendeur(): array
+    public function requiresImei(): bool
     {
-        return [
-            self::VENTE,
+        return in_array($this, [
+            self::RECEPTION_FOURNISSEUR,
+            self::TROC_RECU,
+            self::VENTE_DIRECTE,
+            self::VENTE_TROC,
+            self::DEPOT_REVENDEUR,
             self::RETOUR_CLIENT,
-        ];
+            self::ECHANGE_RETOUR,
+            self::ENVOI_REPARATION,
+            self::RETOUR_REPARATION,
+        ]);
     }
 
     /**
-     * Types accessibles par l'admin uniquement
+     * Types nécessitant info revendeur
      */
-    public static function forAdminOnly(): array
+    public function requiresResellerInfo(): bool
     {
-        return [
-            self::RECEPTION_FOURNISSEUR,
-            self::CASSE,
-            self::VOL,
-            self::PERTE,
-            self::RETOUR_FOURNISSEUR,
-            self::CORRECTION_INVENTAIRE_PLUS,
-            self::CORRECTION_INVENTAIRE_MOINS,
-            self::ECHEANCE,
-            self::ECHANTILLON,
+        return in_array($this, [
             self::DEPOT_REVENDEUR,
             self::RETOUR_REVENDEUR,
-        ];
+        ]);
     }
 
     /**
-     * Grouper par catégorie pour l'UI
+     * Types nécessitant produit de troc associé
      */
+    public function requiresTradeProduct(): bool
+    {
+        return in_array($this, [
+            self::VENTE_TROC,
+            self::TROC_RECU,
+        ]);
+    }
+
     public static function grouped(): array
     {
         return [
-            'Entrées' => [
+            'Entrées stock' => [
                 self::RECEPTION_FOURNISSEUR,
-                self::RETOUR_CLIENT,
+                self::TROC_RECU,
                 self::RETOUR_REVENDEUR,
+                self::RETOUR_CLIENT,
+                self::RETOUR_REPARATION,
             ],
-            'Sorties normales' => [
-                self::VENTE,
-                self::RETOUR_FOURNISSEUR,
-                self::ECHANTILLON,
+            'Ventes' => [
+                self::VENTE_DIRECTE,
+                self::VENTE_TROC,
                 self::DEPOT_REVENDEUR,
             ],
-            'Pertes et avaries' => [
+            'Échanges et réparations' => [
+                self::ECHANGE_RETOUR,
+                self::ENVOI_REPARATION,
+            ],
+            'Sorties définitives' => [
+                self::RETOUR_FOURNISSEUR,
                 self::CASSE,
                 self::VOL,
                 self::PERTE,
-                self::ECHEANCE,
             ],
             'Corrections' => [
-                self::CORRECTION_INVENTAIRE_PLUS,
-                self::CORRECTION_INVENTAIRE_MOINS,
+                self::CORRECTION_PLUS,
+                self::CORRECTION_MOINS,
             ],
         ];
-    }
-
-    /**
-     * Options pour select avec groupes
-     */
-    public static function optionsGrouped(): array
-    {
-        $result = [];
-        foreach (self::grouped() as $group => $types) {
-            $result[$group] = array_map(
-                fn(self $type) => [
-                    'value' => $type->value,
-                    'label' => $type->label(),
-                    'color' => $type->color(),
-                    'icon' => $type->icon(),
-                ],
-                $types
-            );
-        }
-        return $result;
-    }
-
-    /**
-     * Obtenir tous les types
-     */
-    public static function all(): array
-    {
-        return self::cases();
     }
 }
