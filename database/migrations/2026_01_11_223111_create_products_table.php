@@ -1,6 +1,7 @@
 <?php
 
-use App\Enums\ProductStatus;
+use App\Enums\ProductState;
+use App\Enums\ProductLocation;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -17,8 +18,9 @@ return new class extends Migration
             $table->string('imei')->unique()->nullable()->comment('IMEI pour téléphones');
             $table->string('serial_number')->nullable()->comment('Numéro série pour accessoires');
 
-            // État actuel
-            $table->string('status')->default(ProductStatus::STOCK_BOUTIQUE->value);
+            // État et localisation (CHANGÉ)
+            $table->string('state')->default(ProductState::DISPONIBLE->value)->comment('État fonctionnel du produit');
+            $table->string('location')->default(ProductLocation::BOUTIQUE->value)->comment('Localisation physique du produit');
 
             // Prix spécifiques à ce produit (peut différer du modèle)
             $table->decimal('prix_achat', 10, 2)->comment('Prix réel d\'achat de ce produit');
@@ -40,10 +42,11 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            // Index pour performance
-            $table->index('status');
+            // Index pour performance (CHANGÉ)
+            $table->index('state');
+            $table->index('location');
             $table->index('date_achat');
-            $table->index(['product_model_id', 'status']);
+            $table->index(['product_model_id', 'state', 'location']);
         });
     }
 

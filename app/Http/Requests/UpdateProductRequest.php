@@ -2,7 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\ProductStatus;
+use App\Enums\ProductState;
+use App\Enums\ProductLocation;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -35,11 +36,17 @@ class UpdateProductRequest extends FormRequest
                 Rule::unique('products', 'imei')->ignore($productId),
             ],
             'serial_number' => ['nullable', 'string', 'max:100'],
-            'status' => [
+            'state' => [
                 'sometimes',
                 'required',
                 'string',
-                Rule::enum(ProductStatus::class),
+                Rule::enum(ProductState::class),
+            ],
+            'location' => [
+                'sometimes',
+                'required',
+                'string',
+                Rule::enum(ProductLocation::class),
             ],
             'prix_achat' => ['sometimes', 'required', 'numeric', 'min:0', 'max:99999999.99'],
             'prix_vente' => ['sometimes', 'required', 'numeric', 'min:0', 'max:99999999.99', 'gte:prix_achat'],
@@ -60,7 +67,8 @@ class UpdateProductRequest extends FormRequest
             'product_model_id' => 'modèle de produit',
             'imei' => 'IMEI',
             'serial_number' => 'numéro de série',
-            'status' => 'statut',
+            'state' => 'état',
+            'location' => 'localisation',
             'prix_achat' => 'prix d\'achat',
             'prix_vente' => 'prix de vente',
             'date_achat' => 'date d\'achat',
@@ -82,7 +90,10 @@ class UpdateProductRequest extends FormRequest
             'imei.size' => 'L\'IMEI doit contenir exactement 15 chiffres.',
             'imei.regex' => 'L\'IMEI doit contenir uniquement des chiffres.',
             'imei.unique' => 'Cet IMEI est déjà enregistré dans le système.',
-            'status.required' => 'Le statut est obligatoire.',
+            'state.required' => 'L\'état est obligatoire.',
+            'state.enum' => 'L\'état sélectionné n\'est pas valide.',
+            'location.required' => 'La localisation est obligatoire.',
+            'location.enum' => 'La localisation sélectionnée n\'est pas valide.',
             'prix_achat.required' => 'Le prix d\'achat est obligatoire.',
             'prix_vente.required' => 'Le prix de vente est obligatoire.',
             'prix_vente.gte' => 'Le prix de vente doit être supérieur ou égal au prix d\'achat.',
@@ -120,5 +131,67 @@ class UpdateProductRequest extends FormRequest
         $validated['updated_by'] = $this->user()->id;
 
         return $validated;
+    }
+
+    /**
+     * Validation conditionnelle pour la cohérence état/localisation
+     */
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $state = $this->input('state');
+            $location = $this->input('location');
+
+            // Si les deux sont fournis, vérifier la cohérence
+            if ($state && $location) {
+                $this->validateStateLocationConsistency($validator, $state, $location);
+            }
+        });
+    }
+
+    /**
+     * Valider la cohérence entre état et localisation
+     */
+    private function validateStateLocationConsistency($validator, string $state, string $location): void
+    {
+        $invalidCombinations = [
+            // Un produit vendu doit être chez le client (ou chez revendeur si pas confirmé)
+            [
+                'state' => ProductState::VENDU->value,
+                'invalid_locations' => [
+                    ProductLocation::BOUTIQUE->value,
+                    ProductLocation::EN_REPARATION->value,
+                    ProductLocation::FOURNISSEUR->value,
+                ],
+                'message' => 'Un produit vendu ne peut pas être en boutique, en réparation ou chez le fournisseur.'
+            ],
+            // Un produit en réparation doit avoir la localisation correspondante
+            [
+                'state' => ProductState::A_REPARER->value,
+                'invalid_locations' => [
+                    ProductLocation::CHEZ_CLIENT->value,
+                    ProductLocation::FOURNISSEUR->value,
+                ],
+                'message' => 'Un produit à réparer ne peut pas être chez le client ou le fournisseur.'
+            ],
+            // Un produit perdu ne peut pas avoir de localisation précise
+            [
+                'state' => ProductState::PERDU->value,
+                'invalid_locations' => [
+                    ProductLocation::BOUTIQUE->value,
+                    ProductLocation::CHEZ_REVENDEUR->value,
+                    ProductLocation::CHEZ_CLIENT->value,
+                    ProductLocation::EN_REPARATION->value,
+                ],
+                'message' => 'Un produit perdu ne peut pas avoir une localisation active.'
+            ],
+        ];
+
+        foreach ($invalidCombinations as $rule) {
+            if ($state === $rule['state'] && in_array($location, $rule['invalid_locations'])) {
+                $validator->errors()->add('location', $rule['message']);
+                break;
+            }
+        }
     }
 }

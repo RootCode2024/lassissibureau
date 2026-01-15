@@ -22,18 +22,29 @@ class UpdateProductModelRequest extends FormRequest
      */
     public function rules(): array
     {
-        $productModelId = $this->route('product_model') ?? $this->route('id');
+        // Récupérer l'ID depuis l'URL
+        $productModelId = $this->route('product_model');
+
+        // Si c'est un objet, prendre son ID, sinon c'est déjà l'ID
+        if (is_object($productModelId)) {
+            $productModelId = $productModelId->id;
+        }
 
         return [
             'name' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('product_models', 'name')->ignore($productModelId),
+                'name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    Rule::unique('product_models', 'name')->ignore($productModelId),
+                ],
             ],
-            'brand' => ['nullable', 'string', 'max:255'],
+            'brand' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
-            'category' => ['required', 'string', Rule::in(['telephone', 'accessoire'])],
+            'category' => ['required', 'string', Rule::in(['telephone', 'tablette', 'pc', 'accessoire'])],
             'image_url' => ['nullable', 'url', 'max:500'],
             'prix_revient_default' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'prix_vente_default' => ['nullable', 'numeric', 'min:0', 'max:99999999.99', 'gte:prix_revient_default'],
@@ -67,9 +78,9 @@ class UpdateProductModelRequest extends FormRequest
     {
         return [
             'name.required' => 'Le nom du modèle est obligatoire.',
-            'name.unique' => 'Ce modèle existe déjà.',
+            'brand.required' => 'La marque est obligatoire.',
             'category.required' => 'La catégorie est obligatoire.',
-            'category.in' => 'La catégorie doit être "telephone" ou "accessoire".',
+            'category.in' => 'La catégorie doit être "telephone", "tablette", "pc" ou "accessoire".',
             'prix_vente_default.gte' => 'Le prix de vente doit être supérieur ou égal au prix de revient.',
             'stock_minimum.required' => 'Le stock minimum est obligatoire.',
         ];
@@ -83,6 +94,12 @@ class UpdateProductModelRequest extends FormRequest
         if ($this->has('name')) {
             $this->merge([
                 'name' => trim($this->name),
+            ]);
+        }
+
+        if ($this->has('brand')) {
+            $this->merge([
+                'brand' => trim($this->brand),
             ]);
         }
     }

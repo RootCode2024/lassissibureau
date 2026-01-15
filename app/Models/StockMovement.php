@@ -17,8 +17,10 @@ class StockMovement extends Model
         'product_id',
         'type',
         'quantity',
-        'status_before',
-        'status_after',
+        'state_before',      // ✅ CORRIGÉ
+        'state_after',       // ✅ CORRIGÉ
+        'location_before',   // ✅ CORRIGÉ
+        'location_after',
         'sale_id',
         'reseller_id',
         'related_product_id',

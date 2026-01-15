@@ -22,8 +22,11 @@ return new class extends Migration
             $table->integer('quantity')->default(1);
 
             // État du stock avant/après
-            $table->string('status_before')->nullable();
-            $table->string('status_after')->nullable();
+            $table->string('state_before')->nullable();
+            $table->string('state_after')->nullable();
+
+            $table->string('location_before')->nullable();
+            $table->string('location_after')->nullable();
 
             // Relations optionnelles
             $table->foreignId('sale_id')->nullable()->constrained()->nullOnDelete();

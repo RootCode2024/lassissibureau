@@ -2,7 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\ProductStatus;
+use App\Enums\ProductState;
+use App\Enums\ProductLocation;
 use App\Models\Product;
 use App\Models\Sale;
 use Illuminate\Foundation\Http\FormRequest;
@@ -33,8 +34,18 @@ class StoreCustomerReturnRequest extends FormRequest
                 'exists:sales,id',
                 function ($attribute, $value, $fail) {
                     $sale = Sale::find($value);
-                    if ($sale && $sale->product->status->value !== ProductStatus::VENDU->value) {
-                        $fail('Ce produit n\'est pas marqué comme vendu. Statut actuel: ' . $sale->product->status->label());
+                    if ($sale) {
+                        $product = $sale->product;
+
+                        // Vérifier que le produit est bien vendu
+                        if ($product->state !== ProductState::VENDU) {
+                            $fail('Ce produit n\'est pas marqué comme vendu. État actuel: ' . $product->state->label());
+                        }
+
+                        // Vérifier que le produit est chez le client
+                        if ($product->location !== ProductLocation::CHEZ_CLIENT) {
+                            $fail('Ce produit n\'est pas chez le client. Localisation actuelle: ' . $product->location->label());
+                        }
                     }
                 },
             ],
@@ -71,8 +82,15 @@ class StoreCustomerReturnRequest extends FormRequest
                 function ($attribute, $value, $fail) {
                     if ($value) {
                         $product = Product::find($value);
-                        if ($product && !$product->status->isAvailable()) {
-                            $fail('Le produit d\'échange sélectionné n\'est pas disponible (statut: ' . $product->status->label() . ').');
+                        if ($product) {
+                            // Vérifier que le produit est disponible
+                            if (!$product->isAvailable()) {
+                                $fail(sprintf(
+                                    'Le produit d\'échange sélectionné n\'est pas disponible (état: %s, localisation: %s).',
+                                    $product->state->label(),
+                                    $product->location->label()
+                                ));
+                            }
                         }
                     }
                 },

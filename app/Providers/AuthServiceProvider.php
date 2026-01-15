@@ -2,16 +2,18 @@
 
 namespace App\Providers;
 
-use App\Models\Product;
-use App\Models\ProductModel;
-use App\Models\Reseller;
 use App\Models\Sale;
 use App\Models\User;
-use App\Policies\ProductModelPolicy;
-use App\Policies\ProductPolicy;
-use App\Policies\ResellerPolicy;
+use App\Models\Product;
+use App\Models\TradeIn;
+use App\Models\Reseller;
+use App\Models\ProductModel;
 use App\Policies\SalePolicy;
 use App\Policies\UserPolicy;
+use App\Policies\ProductPolicy;
+use App\Policies\TradeInPolicy;
+use App\Policies\ResellerPolicy;
+use App\Policies\ProductModelPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -27,6 +29,7 @@ class AuthServiceProvider extends ServiceProvider
         Reseller::class => ResellerPolicy::class,
         Sale::class => SalePolicy::class,
         User::class => UserPolicy::class,
+        TradeIn::class => TradeInPolicy::class,
     ];
 
     /**

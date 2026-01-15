@@ -2,7 +2,8 @@
 
 namespace App\Services;
 
-use App\Enums\ProductStatus;
+use App\Enums\ProductState;
+use App\Enums\ProductLocation;
 use App\Models\Product;
 use App\Models\ProductModel;
 use App\Models\Reseller;
@@ -18,19 +19,102 @@ class ReportService
     ) {}
 
     /**
-     * Rapport quotidien.
+     * Rapport quotidien - VERSION CORRIGÉE
+     * Retourne les ventes complètes avec leurs relations
      */
     public function getDailyReport($date, ?int $userId = null): array
     {
         $startDate = $date . ' 00:00:00';
         $endDate = $date . ' 23:59:59';
 
+        // Récupérer les ventes complètes
+        $salesQuery = Sale::with(['product.productModel', 'seller', 'reseller', 'tradeIn'])
+            ->confirmed()
+            ->whereBetween('date_vente_effective', [$startDate, $endDate]);
+
+        if ($userId) {
+            $salesQuery->where('sold_by', $userId);
+        }
+
+        $sales = $salesQuery->get();
+
+        // Calculer les statistiques
         return [
             'date' => $date,
-            'sales' => $this->saleService->getSalesStats($startDate, $endDate, $userId),
+            'sales' => $sales, // Collection de modèles Sale complets
+            'sales_count' => $sales->count(),
+            'revenue' => $sales->sum('prix_vente'),
+            'profit' => $sales->sum('benefice'),
+            'payments_received' => $sales->sum('amount_paid'),
+            'average_sale' => $sales->count() > 0 ? $sales->avg('prix_vente') : 0,
+            'average_profit' => $sales->count() > 0 ? $sales->avg('benefice') : 0,
+            // Statistiques par type
+            'by_type' => $sales->groupBy('sale_type')->map(function ($group) {
+                return [
+                    'count' => $group->count(),
+                    'revenue' => $group->sum('prix_vente'),
+                    'profit' => $group->sum('benefice'),
+                ];
+            }),
+            // Statistiques par vendeur
+            'by_seller' => $sales->groupBy('sold_by')->map(function ($group) {
+                return [
+                    'seller' => $group->first()->seller->name ?? 'N/A',
+                    'count' => $group->count(),
+                    'revenue' => $group->sum('prix_vente'),
+                    'profit' => $group->sum('benefice'),
+                ];
+            })->values(),
+            // Mouvements de stock du jour
             'movements' => $this->stockService->getMovementStats($startDate, $endDate),
         ];
     }
+
+    /**
+     * Rapport complet pour une période (pour export PDF).
+     */
+    public function getFullPeriodReport(string $startDate, string $endDate): array
+    {
+        // PAGE 1: Ventes confirmées de la période
+        $sales = Sale::with(['product.productModel', 'reseller', 'seller', 'tradeIn'])
+            ->confirmed()
+            ->whereBetween('date_vente_effective', [$startDate, $endDate])
+            ->orderBy('created_at')
+            ->get();
+
+        // PAGE 2: Sorties vers revendeurs
+        $resellerSales = Sale::with(['product.productModel', 'reseller'])
+            ->whereNotNull('reseller_id')
+            ->whereBetween('date_depot_revendeur', [$startDate, $endDate])
+            ->orderBy('date_depot_revendeur')
+            ->get();
+
+        // PAGE 3: Stocks disponibles actuellement
+        $stocks = Product::with('productModel')
+            ->whereIn('state', [ProductState::DISPONIBLE->value, ProductState::REPARE->value])
+            ->where('location', ProductLocation::BOUTIQUE->value)
+            ->orderBy('product_model_id')
+            ->get();
+
+        // Statistiques globales
+        $stats = [
+            'period' => ['start' => $startDate, 'end' => $endDate],
+            'total_sales' => $sales->count(),
+            'total_revenue' => $sales->sum('prix_vente'),
+            'total_profit' => $sales->sum('benefice'),
+            'total_reseller_sales' => $resellerSales->count(),
+            'total_stock_available' => $stocks->count(),
+            'total_stock_value' => $stocks->sum('prix_vente'),
+        ];
+
+        return [
+            'sales' => $sales,
+            'reseller_sales' => $resellerSales,
+            'stocks' => $stocks,
+            'stats' => $stats,
+        ];
+    }
+
 
     /**
      * Rapport hebdomadaire.
@@ -89,10 +173,14 @@ class ReportService
             'total_models' => $productModels->count(),
             'total_products' => Product::count(),
             'products_in_stock' => Product::inStock()->count(),
-            'products_sold' => Product::where('status', ProductStatus::VENDU)->count(),
-            'products_chez_revendeur' => Product::chezRevendeur()->count(),
+            'products_sold' => Product::where('state', ProductState::VENDU->value)->count(),
+            'products_chez_revendeur' => Product::where('location', ProductLocation::CHEZ_REVENDEUR->value)->count(),
+            'products_en_reparation' => Product::where('location', ProductLocation::EN_REPARATION->value)->count(),
+            'products_a_reparer' => Product::where('state', ProductState::A_REPARER->value)->count(),
             'low_stock_models' => $productModels->filter(fn($m) => $m->isLowStock()),
             'by_category' => $this->getProductsByCategory(),
+            'by_state' => $this->getProductsByState(),
+            'by_location' => $this->getProductsByLocation(),
         ];
     }
 
@@ -107,11 +195,15 @@ class ReportService
             'total_resellers' => $resellers->count(),
             'active_resellers' => $resellers->where('is_active', true)->count(),
             'resellers_with_pending' => $resellers->where('pending_sales_count', '>', 0)->count(),
+            'total_products_at_resellers' => Product::where('location', ProductLocation::CHEZ_REVENDEUR->value)->count(),
             'resellers_details' => $resellers->map(function ($reseller) use ($startDate, $endDate) {
                 $data = [
                     'reseller' => $reseller,
                     'total_sales' => $reseller->total_sales,
                     'total_benefice' => $reseller->total_benefice,
+                    'products_count' => Product::where('location', ProductLocation::CHEZ_REVENDEUR->value)
+                        ->whereHas('currentSale', fn($q) => $q->where('reseller_id', $reseller->id))
+                        ->count(),
                 ];
 
                 if ($startDate && $endDate) {
@@ -135,14 +227,55 @@ class ReportService
             'total_value_cost' => $products->sum('prix_achat'),
             'total_value_sale' => $products->sum('prix_vente'),
             'potential_profit' => $products->sum(fn($p) => $p->benefice_potentiel),
-            'by_status' => $products->groupBy('status')->map(function ($group) {
+            'by_state' => $products->groupBy('state')->map(function ($group) {
                 return [
                     'count' => $group->count(),
                     'total_cost' => $group->sum('prix_achat'),
                     'total_sale_value' => $group->sum('prix_vente'),
+                    'potential_profit' => $group->sum(fn($p) => $p->benefice_potentiel),
+                ];
+            }),
+            'by_location' => $products->groupBy('location')->map(function ($group) {
+                return [
+                    'count' => $group->count(),
+                    'total_cost' => $group->sum('prix_achat'),
+                    'total_sale_value' => $group->sum('prix_vente'),
+                    'potential_profit' => $group->sum(fn($p) => $p->benefice_potentiel),
                 ];
             }),
             'by_model' => $this->getInventoryByModel(),
+            'stock_health' => $this->getStockHealth(),
+        ];
+    }
+
+    /**
+     * Rapport des réparations.
+     */
+    public function getRepairsReport($startDate = null, $endDate = null): array
+    {
+        $query = Product::where(function ($q) {
+            $q->where('state', ProductState::A_REPARER->value)
+                ->orWhere('state', ProductState::REPARE->value)
+                ->orWhere('location', ProductLocation::EN_REPARATION->value);
+        });
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('updated_at', [$startDate, $endDate]);
+        }
+
+        $products = $query->with('productModel')->get();
+
+        return [
+            'total_repairs' => $products->count(),
+            'awaiting_repair' => $products->where('state', ProductState::A_REPARER->value)->count(),
+            'in_repair' => $products->where('location', ProductLocation::EN_REPARATION->value)->count(),
+            'repaired' => $products->where('state', ProductState::REPARE->value)->count(),
+            'by_model' => $products->groupBy('product_model_id')->map(function ($group) {
+                return [
+                    'model' => $group->first()->productModel->name ?? 'N/A',
+                    'count' => $group->count(),
+                ];
+            })->values(),
         ];
     }
 
@@ -168,7 +301,7 @@ class ReportService
             $breakdown[$dateKey] = [
                 'count' => $daySales->count(),
                 'revenue' => $daySales->sum('prix_vente'),
-                'profit' => $daySales->sum(fn($s) => $s->benefice),
+                'profit' => $daySales->sum('benefice'),
             ];
 
             $current->modify('+1 day');
@@ -185,9 +318,15 @@ class ReportService
         return [
             'total_products' => Product::count(),
             'in_stock' => Product::inStock()->count(),
-            'sold' => Product::where('status', ProductStatus::VENDU)->count(),
-            'chez_revendeur' => Product::chezRevendeur()->count(),
-            'a_reparer' => Product::aReparer()->count(),
+            'available_for_sale' => Product::where('state', ProductState::DISPONIBLE->value)
+                ->where('location', ProductLocation::BOUTIQUE->value)
+                ->count(),
+            'sold' => Product::where('state', ProductState::VENDU->value)->count(),
+            'chez_revendeur' => Product::where('location', ProductLocation::CHEZ_REVENDEUR->value)->count(),
+            'chez_client' => Product::where('location', ProductLocation::CHEZ_CLIENT->value)->count(),
+            'a_reparer' => Product::where('state', ProductState::A_REPARER->value)->count(),
+            'en_reparation' => Product::where('location', ProductLocation::EN_REPARATION->value)->count(),
+            'repare' => Product::where('state', ProductState::REPARE->value)->count(),
             'low_stock_count' => ProductModel::all()->filter(fn($m) => $m->isLowStock())->count(),
         ];
     }
@@ -204,9 +343,11 @@ class ReportService
                 'product_models.id',
                 'product_models.name',
                 DB::raw('COUNT(*) as sales_count'),
-                DB::raw('SUM(sales.prix_vente) as total_revenue')
+                DB::raw('SUM(sales.prix_vente) as total_revenue'),
+                DB::raw('SUM(sales.benefice) as total_profit')
             )
             ->where('sales.is_confirmed', true)
+            ->whereNull('sales.deleted_at')
             ->groupBy('product_models.id', 'product_models.name')
             ->orderByDesc('sales_count')
             ->limit($limit)
@@ -222,9 +363,40 @@ class ReportService
         return DB::table('products')
             ->join('product_models', 'products.product_model_id', '=', 'product_models.id')
             ->select('product_models.category', DB::raw('COUNT(*) as count'))
+            ->whereNull('products.deleted_at')
             ->groupBy('product_models.category')
             ->get()
             ->pluck('count', 'category')
+            ->toArray();
+    }
+
+    /**
+     * Produits par état.
+     */
+    private function getProductsByState(): array
+    {
+        return Product::select('state', DB::raw('COUNT(*) as count'))
+            ->groupBy('state')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                $state = ProductState::from($item->state);
+                return [$state->label() => $item->count];
+            })
+            ->toArray();
+    }
+
+    /**
+     * Produits par localisation.
+     */
+    private function getProductsByLocation(): array
+    {
+        return Product::select('location', DB::raw('COUNT(*) as count'))
+            ->groupBy('location')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                $location = ProductLocation::from($item->location);
+                return [$location->label() => $item->count];
+            })
             ->toArray();
     }
 
@@ -245,8 +417,47 @@ class ReportService
                     'quantity' => $model->products_in_stock_count,
                     'total_cost' => $model->productsInStock->sum('prix_achat'),
                     'total_sale_value' => $model->productsInStock->sum('prix_vente'),
+                    'potential_profit' => $model->productsInStock->sum('prix_vente') - $model->productsInStock->sum('prix_achat'),
                 ];
             })
             ->toArray();
+    }
+
+    /**
+     * Santé du stock (analyse avancée).
+     */
+    private function getStockHealth(): array
+    {
+        $products = Product::with('productModel')->get();
+
+        return [
+            'available_for_sale' => $products->where('state', ProductState::DISPONIBLE->value)
+                ->where('location', ProductLocation::BOUTIQUE->value)
+                ->count(),
+            'needs_attention' => $products->whereIn('state', [
+                ProductState::A_REPARER->value,
+                ProductState::RETOUR->value,
+            ])->count(),
+            'out_for_repair' => $products->where('location', ProductLocation::EN_REPARATION->value)->count(),
+            'with_resellers' => $products->where('location', ProductLocation::CHEZ_REVENDEUR->value)->count(),
+            'turnover_rate' => $this->calculateTurnoverRate(),
+        ];
+    }
+
+    /**
+     * Calculer le taux de rotation du stock.
+     */
+    private function calculateTurnoverRate(): float
+    {
+        $soldLast30Days = Product::where('state', ProductState::VENDU->value)
+            ->where('updated_at', '>=', now()->subDays(30))
+            ->count();
+
+        $averageStock = Product::whereIn('state', [
+            ProductState::DISPONIBLE->value,
+            ProductState::REPARE->value,
+        ])->count();
+
+        return $averageStock > 0 ? round(($soldLast30Days / $averageStock) * 100, 2) : 0;
     }
 }

@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\ProductStatus;
+use App\Enums\ProductState;
+use App\Enums\ProductLocation;
 use App\Enums\StockMovementType;
 use App\Http\Requests\StoreCustomerReturnRequest;
 use App\Models\CustomerReturn;
@@ -62,18 +63,19 @@ class CustomerReturnController extends Controller
             $sale = Sale::with('product.productModel')->find($request->sale_id);
         }
 
-        // Ventes récentes confirmées
+        // Ventes récentes confirmées (produits vendus et chez le client)
         $recentSales = Sale::with('product.productModel')
             ->confirmed()
             ->whereHas('product', function ($q) {
-                $q->where('status', ProductStatus::VENDU);
+                $q->where('state', ProductState::VENDU->value)
+                    ->where('location', ProductLocation::CHEZ_CLIENT->value);
             })
             ->latest()
             ->take(50)
             ->get();
 
         // Produits disponibles pour échange
-        $availableProducts = Product::inStock()->with('productModel')->get();
+        $availableProducts = Product::availableForSale()->with('productModel')->get();
 
         return view('returns.create', compact('sale', 'recentSales', 'availableProducts'));
     }
@@ -111,24 +113,26 @@ class CustomerReturnController extends Controller
 
                 $customerReturn->update(['exchange_sale_id' => $newSale->id]);
 
-                // Mouvement pour le produit d'échange
+                // Mouvement pour le produit d'échange (vendu au client)
                 $this->stockService->createMovement([
                     'product_id' => $exchangeProduct->id,
                     'type' => StockMovementType::ECHANGE_RETOUR->value,
                     'quantity' => 1,
-                    'status_after' => ProductStatus::VENDU->value,
+                    'state_after' => ProductState::VENDU->value,
+                    'location_after' => ProductLocation::CHEZ_CLIENT->value,
                     'related_product_id' => $returnedProduct->id,
                     'user_id' => $validated['processed_by'],
                     'notes' => 'Échange suite retour client',
                 ]);
             }
 
-            // Mouvement pour le produit retourné
+            // Mouvement pour le produit retourné (retour en boutique)
             $this->stockService->createMovement([
                 'product_id' => $returnedProduct->id,
                 'type' => StockMovementType::RETOUR_CLIENT->value,
                 'quantity' => 1,
-                'status_after' => ProductStatus::RETOUR_CLIENT->value,
+                'state_after' => ProductState::RETOUR->value,
+                'location_after' => ProductLocation::BOUTIQUE->value,
                 'user_id' => $validated['processed_by'],
                 'notes' => 'Retour client - ' . $validated['reason'],
             ]);
@@ -157,5 +161,64 @@ class CustomerReturnController extends Controller
         ]);
 
         return view('returns.show', compact('customerReturn'));
+    }
+
+    /**
+     * Process a product after return (repair or mark as defective).
+     */
+    public function processReturnedProduct(Request $request, CustomerReturn $customerReturn)
+    {
+        $this->authorize('update', $customerReturn);
+
+        $validated = $request->validate([
+            'action' => ['required', 'string', 'in:repair,available,defective'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $product = $customerReturn->returnedProduct;
+
+        DB::transaction(function () use ($product, $validated, $request) {
+            switch ($validated['action']) {
+                case 'repair':
+                    // Envoyer en réparation
+                    $this->productService->sendToRepair(
+                        $product,
+                        $request->user()->id,
+                        $validated['notes'] ?? 'Suite retour client'
+                    );
+                    break;
+
+                case 'available':
+                    // Remettre disponible (produit OK)
+                    $this->productService->changeStateAndLocation(
+                        $product,
+                        StockMovementType::RETOUR_CLIENT,
+                        $request->user()->id,
+                        ProductState::DISPONIBLE,
+                        ProductLocation::BOUTIQUE,
+                        ['notes' => $validated['notes'] ?? 'Produit vérifié - disponible']
+                    );
+                    break;
+
+                case 'defective':
+                    // Marquer comme défectueux/perdu
+                    $this->productService->changeStateAndLocation(
+                        $product,
+                        StockMovementType::PERTE,
+                        $request->user()->id,
+                        ProductState::PERDU,
+                        ProductLocation::BOUTIQUE,
+                        [
+                            'notes' => $validated['notes'] ?? 'Produit défectueux - hors service',
+                            'justification' => 'Retour client - produit irrécupérable'
+                        ]
+                    );
+                    break;
+            }
+        });
+
+        return redirect()
+            ->route('returns.show', $customerReturn)
+            ->with('success', 'Produit traité avec succès.');
     }
 }

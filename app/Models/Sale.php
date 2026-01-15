@@ -3,10 +3,14 @@
 namespace App\Models;
 
 use App\Enums\SaleType;
+use App\Enums\PaymentStatus;
+use App\Enums\ProductState;
+use App\Enums\ProductLocation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -26,6 +30,11 @@ class Sale extends Model
         'date_depot_revendeur',
         'date_confirmation_vente',
         'is_confirmed',
+        'payment_status',
+        'amount_paid',
+        'amount_remaining',
+        'payment_due_date',
+        'final_payment_date',
         'date_vente_effective',
         'sold_by',
         'notes',
@@ -33,10 +42,15 @@ class Sale extends Model
 
     protected $casts = [
         'sale_type' => SaleType::class,
+        'payment_status' => PaymentStatus::class,
         'prix_vente' => 'decimal:2',
         'prix_achat_produit' => 'decimal:2',
+        'amount_paid' => 'decimal:2',
+        'amount_remaining' => 'decimal:2',
         'date_depot_revendeur' => 'date',
         'date_confirmation_vente' => 'date',
+        'payment_due_date' => 'date',
+        'final_payment_date' => 'date',
         'date_vente_effective' => 'date',
         'is_confirmed' => 'boolean',
     ];
@@ -93,6 +107,14 @@ class Sale extends Model
     }
 
     /**
+     * Paiements associés
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class)->orderBy('payment_date', 'desc');
+    }
+
+    /**
      * Calculer le bénéfice réel
      */
     public function getBeneficeAttribute(): float
@@ -112,14 +134,27 @@ class Sale extends Model
     }
 
     /**
+     * Obtenir le montant en espèces reçu
+     */
+    public function getMontantEspecesAttribute(): float
+    {
+        if ($this->sale_type === SaleType::ACHAT_DIRECT) {
+            return (float) $this->prix_vente;
+        }
+
+        if ($this->tradeIn) {
+            return (float) $this->tradeIn->complement_especes;
+        }
+
+        return 0;
+    }
+
+    /**
      * Vérifier si c'est une vente avec troc
      */
     public function hasTradeIn(): bool
     {
-        return in_array($this->sale_type, [
-            SaleType::TROC,
-            SaleType::TROC_AVEC_COMPLEMENT,
-        ]);
+        return $this->sale_type === SaleType::TROC;
     }
 
     /**
@@ -131,18 +166,48 @@ class Sale extends Model
     }
 
     /**
-     * Confirmer la vente (pour les revendeurs)
+     * Vérifier si la vente est confirmée
      */
-    public function confirm(?string $notes = null): void
+    public function isConfirmed(): bool
     {
-        $this->update([
-            'is_confirmed' => true,
-            'date_confirmation_vente' => now(),
-            'notes' => $notes ? $this->notes . "\n" . $notes : $this->notes,
-        ]);
+        return $this->is_confirmed === true;
+    }
 
-        // Mettre à jour le statut du produit
-        $this->product->update(['status' => \App\Enums\ProductStatus::VENDU]);
+    /**
+     * Vérifier si la vente est en attente (chez revendeur)
+     */
+    public function isPending(): bool
+    {
+        return $this->is_confirmed === false && $this->reseller_id !== null;
+    }
+
+    /**
+     * Vérifier si le paiement est complet
+     */
+    public function isFullyPaid(): bool
+    {
+        return $this->payment_status === PaymentStatus::PAID;
+    }
+
+    /**
+     * Vérifier si c'est une vente à crédit
+     */
+    public function isCreditSale(): bool
+    {
+        return $this->reseller_id && in_array($this->payment_status, [
+            PaymentStatus::UNPAID,
+            PaymentStatus::PARTIAL,
+        ]);
+    }
+
+    /**
+     * Vérifier si le paiement est en retard
+     */
+    public function isPaymentOverdue(): bool
+    {
+        return $this->payment_due_date
+            && $this->payment_due_date->isPast()
+            && !$this->isFullyPaid();
     }
 
     /**
@@ -158,7 +223,47 @@ class Sale extends Model
      */
     public function scopePending($query)
     {
-        return $query->where('is_confirmed', false);
+        return $query->where('is_confirmed', false)
+            ->whereNotNull('reseller_id');
+    }
+
+    /**
+     * Scope pour les ventes impayées
+     */
+    public function scopeUnpaid($query)
+    {
+        return $query->where('payment_status', PaymentStatus::UNPAID);
+    }
+
+    /**
+     * Scope pour les ventes partiellement payées
+     */
+    public function scopePartiallyPaid($query)
+    {
+        return $query->where('payment_status', PaymentStatus::PARTIAL);
+    }
+
+    /**
+     * Scope pour les ventes avec paiement en attente
+     */
+    public function scopeWithPendingPayment($query)
+    {
+        return $query->whereIn('payment_status', [
+            PaymentStatus::UNPAID,
+            PaymentStatus::PARTIAL,
+        ]);
+    }
+
+    /**
+     * Scope pour les paiements en retard
+     */
+    public function scopeOverdue($query)
+    {
+        return $query->whereIn('payment_status', [
+            PaymentStatus::UNPAID,
+            PaymentStatus::PARTIAL,
+        ])
+            ->where('payment_due_date', '<', today());
     }
 
     /**
@@ -214,21 +319,18 @@ class Sale extends Model
     }
 
     /**
-     * Scope pour les ventes directes uniquement
+     * Scope pour les ventes par vendeur
      */
-    public function scopeDirectSales($query)
+    public function scopeBySeller($query, int $sellerId)
     {
-        return $query->where('sale_type', SaleType::ACHAT_DIRECT->value);
+        return $query->where('sold_by', $sellerId);
     }
 
     /**
-     * Scope pour les ventes avec troc
+     * Scope pour les ventes par revendeur
      */
-    public function scopeWithTradeIn($query)
+    public function scopeByReseller($query, int $resellerId)
     {
-        return $query->whereIn('sale_type', [
-            SaleType::TROC->value,
-            SaleType::TROC_AVEC_COMPLEMENT->value,
-        ]);
+        return $query->where('reseller_id', $resellerId);
     }
 }

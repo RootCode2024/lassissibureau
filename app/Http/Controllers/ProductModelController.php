@@ -6,6 +6,7 @@ use App\Http\Requests\StoreProductModelRequest;
 use App\Http\Requests\UpdateProductModelRequest;
 use App\Models\ProductModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProductModelController extends Controller
 {
@@ -16,7 +17,15 @@ class ProductModelController extends Controller
     {
         $this->authorize('viewAny', ProductModel::class);
 
-        $query = ProductModel::query()->withCount('products', 'productsInStock');
+        $query = ProductModel::query();
+
+        // Ajouter les compteurs de base
+        $query->withCount([
+            'products',
+            'productsInStock',
+            'productsAvailableForSale',
+            'productsSold',
+        ]);
 
         // Filtres
         if ($request->filled('search')) {
@@ -30,13 +39,27 @@ class ProductModelController extends Controller
             $query->where('category', $request->category);
         }
 
+        // Filtre pour stock bas - CORRIGÉ
         if ($request->boolean('low_stock')) {
-            $query->whereHas('productsInStock', function ($q) {
-                $q->havingRaw('COUNT(*) <= product_models.stock_minimum');
-            });
+            $query->select('product_models.*')
+                ->selectSub(
+                    'SELECT COUNT(*) FROM products 
+                     WHERE products.product_model_id = product_models.id 
+                     AND products.location IN (\'boutique\', \'en_reparation\')
+                     AND products.deleted_at IS NULL',
+                    'current_stock_count'
+                )
+                ->havingRaw('current_stock_count <= product_models.stock_minimum');
         }
 
         $productModels = $query->latest()->paginate(20);
+
+        // Ajouter le stock actuel calculé pour chaque modèle
+        $productModels->getCollection()->transform(function ($model) {
+            $model->current_stock = $model->productsInStock()->count();
+            $model->is_low_stock = $model->current_stock <= $model->stock_minimum;
+            return $model;
+        });
 
         return view('product-models.index', compact('productModels'));
     }
@@ -70,14 +93,38 @@ class ProductModelController extends Controller
     {
         $this->authorize('view', $productModel);
 
+        // Charger les produits avec leurs mouvements
         $productModel->load(['products' => function ($query) {
             $query->latest()->with('stockMovements')->take(20);
         }]);
 
+        // Statistiques détaillées
         $stats = [
+            // Quantités
             'total_stock' => $productModel->stock_quantity,
-            'total_sold' => $productModel->productsSold()->count(),
-            'average_price' => $productModel->products()->avg('prix_vente'),
+            'available_for_sale' => $productModel->available_quantity,
+            'total_sold' => $productModel->sold_quantity,
+            'at_resellers' => $productModel->reseller_quantity,
+            'in_repair' => $productModel->repair_quantity,
+            
+            // Prix
+            'average_purchase_price' => $productModel->productsInStock()->avg('prix_achat') ?? 0,
+            'average_sale_price' => $productModel->productsSold()->avg('prix_vente') ?? 0,
+            
+            // Valeurs
+            'stock_value' => $productModel->stock_value,
+            'potential_sale_value' => $productModel->stock_sale_value,
+            'potential_profit' => $productModel->stock_potential_profit,
+            
+            // Alertes
+            'is_low_stock' => $productModel->isLowStock(),
+            'stock_minimum' => $productModel->stock_minimum,
+            
+            // Bénéfices réalisés
+            'total_profit' => $productModel->productsSold()
+                ->join('sales', 'products.id', '=', 'sales.product_id')
+                ->where('sales.is_confirmed', true)
+                ->sum('sales.benefice') ?? 0,
         ];
 
         return view('product-models.show', compact('productModel', 'stats'));
@@ -112,8 +159,11 @@ class ProductModelController extends Controller
     {
         $this->authorize('delete', $productModel);
 
-        if ($productModel->products()->count() > 0) {
-            return back()->with('error', 'Impossible de supprimer ce modèle car des produits l\'utilisent.');
+        // Vérifier s'il y a des produits associés
+        $productsCount = $productModel->products()->count();
+        
+        if ($productsCount > 0) {
+            return back()->with('error', "Impossible de supprimer ce modèle car {$productsCount} produit(s) l'utilisent.");
         }
 
         $productModel->delete();
@@ -121,5 +171,53 @@ class ProductModelController extends Controller
         return redirect()
             ->route('product-models.index')
             ->with('success', 'Modèle de produit supprimé avec succès.');
+    }
+
+    /**
+     * Obtenir les statistiques globales des modèles (API)
+     */
+    public function stats()
+    {
+        $this->authorize('viewAny', ProductModel::class);
+
+        $stats = [
+            'total_models' => ProductModel::count(),
+            'active_models' => ProductModel::where('is_active', true)->count(),
+            'low_stock_models' => $this->getLowStockModelsCount(),
+            'total_products' => DB::table('products')->whereNull('deleted_at')->count(),
+            'total_stock_value' => $this->getTotalStockValue(),
+        ];
+
+        return response()->json($stats);
+    }
+
+    /**
+     * Obtenir le nombre de modèles en stock bas
+     */
+    private function getLowStockModelsCount(): int
+    {
+        $lowStockCount = 0;
+        
+        $productModels = ProductModel::where('is_active', true)->get();
+        
+        foreach ($productModels as $model) {
+            $stockQuantity = $model->productsInStock()->count();
+            if ($stockQuantity <= $model->stock_minimum) {
+                $lowStockCount++;
+            }
+        }
+        
+        return $lowStockCount;
+    }
+
+    /**
+     * Obtenir la valeur totale du stock
+     */
+    private function getTotalStockValue(): float
+    {
+        return (float) DB::table('products')
+            ->whereNull('deleted_at')
+            ->whereIn('location', ['boutique', 'en_reparation'])
+            ->sum('prix_achat');
     }
 }

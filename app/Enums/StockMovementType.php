@@ -201,4 +201,17 @@ enum StockMovementType: string
             ],
         ];
     }
+
+    /**
+     * Types de mouvements autorisés pour un vendeur
+     */
+    public static function forVendeur(): array
+    {
+        return [
+            self::VENTE_DIRECTE,
+            self::VENTE_TROC,
+            self::RETOUR_CLIENT,
+            self::ECHANGE_RETOUR,
+        ];
+    }
 }

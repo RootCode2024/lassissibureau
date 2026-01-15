@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Sale;
+use App\Models\StockMovement;
 use App\Services\ReportService;
 use Illuminate\Http\Request;
 
@@ -12,16 +14,39 @@ class ReportController extends Controller
     ) {}
 
     /**
-     * Rapport quotidien.
+     * Rapport par période.
      */
     public function daily(Request $request)
     {
-        $date = $request->input('date', now()->format('Y-m-d'));
+        $startDate = $request->input('start_date', now()->format('Y-m-d'));
+        $endDate = $request->input('end_date', now()->format('Y-m-d'));
         $userId = $request->user()->isVendeur() ? $request->user()->id : null;
 
-        $report = $this->reportService->getDailyReport($date, $userId);
+        $report = $this->reportService->getFullPeriodReport($startDate, $endDate);
 
-        return view('reports.daily', compact('report', 'date'));
+        return view('reports.daily', compact('report', 'startDate', 'endDate'));
+    }
+
+    /**
+     * Télécharger le rapport PDF.
+     */
+    public function downloadPdf(Request $request)
+    {
+        $validated = $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
+
+        $startDate = $validated['start_date'];
+        $endDate = $validated['end_date'];
+
+        $report = $this->reportService->getFullPeriodReport($startDate, $endDate);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.pdf.complete', compact('report', 'startDate', 'endDate'))
+            ->setPaper('a4', 'portrait');
+
+        $filename = "rapport_{$startDate}_{$endDate}.pdf";
+        return $pdf->download($filename);
     }
 
     /**

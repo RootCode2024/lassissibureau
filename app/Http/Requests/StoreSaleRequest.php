@@ -2,248 +2,187 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\ProductStatus;
 use App\Enums\SaleType;
-use App\Models\Product;
-use Illuminate\Foundation\Http\FormRequest;
+use App\Enums\PaymentStatus;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Http\FormRequest;
 
 class StoreSaleRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return $this->user()->can('sales.create');
+        return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
-            // Produit vendu
-            'product_id' => [
-                'required',
-                'integer',
-                'exists:products,id',
-                function ($attribute, $value, $fail) {
-                    $product = Product::find($value);
-                    if ($product && !$product->status->isAvailable()) {
-                        $fail('Ce produit n\'est pas disponible à la vente (statut: ' . $product->status->label() . ').');
-                    }
-                },
-            ],
-
-            // Type de vente
-            'sale_type' => [
-                'required',
-                'string',
-                Rule::enum(SaleType::class),
-            ],
+            // Produit et type de vente
+            'product_id' => ['required', 'exists:products,id'],
+            'sale_type' => ['required', 'string', 'in:achat_direct,troc'],
 
             // Prix
-            'prix_vente' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
+            'prix_vente' => ['required', 'numeric', 'min:0'],
+            'prix_achat_produit' => ['required', 'numeric', 'min:0'],
 
-            // Informations client
+            // Client
             'client_name' => ['nullable', 'string', 'max:255'],
-            'client_phone' => [
+            'client_phone' => ['nullable', 'string', 'max:20'],
+
+            // Type d'acheteur
+            'buyer_type' => ['required', 'string', 'in:direct,reseller'],
+
+            // Revendeur
+            'reseller_id' => ['nullable', 'required_if:buyer_type,reseller', 'exists:resellers,id'],
+            'date_depot_revendeur' => ['nullable', 'required_with:reseller_id', 'date'],
+
+            // Paiement (pour revendeurs)
+            'payment_status' => ['nullable', 'required_with:reseller_id', 'in:unpaid,partial,paid'],
+            'amount_paid' => ['nullable', 'numeric', 'min:0', 'lte:prix_vente'],
+            'payment_due_date' => ['nullable', 'required_with:reseller_id', 'date', 'after_or_equal:today'],
+            'payment_method' => ['nullable', 'string', 'in:cash,mobile_money,bank_transfer,check'],
+
+            // Dates
+            'date_vente_effective' => ['required', 'date'],
+            'is_confirmed' => ['required', 'boolean'],
+
+            // Notes
+            'notes' => ['nullable', 'string'],
+
+            // Trade-in (validation conditionnelle)
+            'has_trade_in' => ['nullable', 'boolean'],
+            'trade_in.modele_recu' => [
                 'nullable',
+                'required_if:sale_type,troc',
                 'string',
-                'max:20',
-                'regex:/^(\+229)?[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$/',
-            ],
-
-            // Revendeur (optionnel)
-            'reseller_id' => ['nullable', 'integer', 'exists:resellers,id'],
-            'date_depot_revendeur' => [
-                Rule::requiredIf(fn() => $this->reseller_id !== null),
-                'nullable',
-                'date',
-                'before_or_equal:today',
-            ],
-
-            'notes' => ['nullable', 'string', 'max:2000'],
-
-            // Troc (si sale_type = TROC ou TROC_AVEC_COMPLEMENT)
-            'has_trade_in' => ['boolean'],
-            'trade_in.product_model_name' => [
-                Rule::requiredIf(fn() => $this->has_trade_in === true),
-                'nullable',
-                'string',
-                'max:255',
+                'max:255'
             ],
             'trade_in.imei_recu' => [
-                Rule::requiredIf(fn() => $this->has_trade_in === true),
                 'nullable',
+                'required_if:sale_type,troc',
                 'string',
-                'size:15',
-                'regex:/^[0-9]{15}$/',
-                'unique:products,imei',
+                'size:15'
             ],
             'trade_in.valeur_reprise' => [
-                Rule::requiredIf(fn() => $this->has_trade_in === true),
                 'nullable',
+                'required_if:sale_type,troc',
                 'numeric',
                 'min:0',
-                'max:99999999.99',
+                'lte:prix_vente'
             ],
-            'trade_in.complement_especes' => [
-                'nullable',
-                'numeric',
-                'min:0',
-                'max:99999999.99',
-            ],
-            'trade_in.etat_recu' => ['nullable', 'string', 'max:500'],
-            'trade_in.condition' => [
-                'nullable',
-                'string',
-                Rule::in(['Neuf', 'Excellent', 'Très bon', 'Bon', 'Correct', 'Passable', 'Mauvais']),
-            ],
+            'trade_in.complement_especes' => ['nullable', 'numeric'],
+            'trade_in.etat_recu' => ['nullable', 'string'],
         ];
     }
 
-    /**
-     * Get custom attributes for validator errors.
-     */
-    public function attributes(): array
-    {
-        return [
-            'product_id' => 'produit',
-            'sale_type' => 'type de vente',
-            'prix_vente' => 'prix de vente',
-            'client_name' => 'nom du client',
-            'client_phone' => 'téléphone du client',
-            'reseller_id' => 'revendeur',
-            'date_depot_revendeur' => 'date de dépôt',
-            'notes' => 'notes',
-            'trade_in.product_model_name' => 'modèle du téléphone repris',
-            'trade_in.imei_recu' => 'IMEI du téléphone repris',
-            'trade_in.valeur_reprise' => 'valeur de reprise',
-            'trade_in.complement_especes' => 'complément en espèces',
-            'trade_in.etat_recu' => 'état du téléphone repris',
-            'trade_in.condition' => 'condition',
-        ];
-    }
-
-    /**
-     * Get custom messages for validator errors.
-     */
     public function messages(): array
     {
         return [
-            'product_id.required' => 'Vous devez sélectionner un produit.',
+            'product_id.required' => 'Le produit est requis.',
             'product_id.exists' => 'Le produit sélectionné n\'existe pas.',
-            'sale_type.required' => 'Le type de vente est obligatoire.',
-            'prix_vente.required' => 'Le prix de vente est obligatoire.',
-            'client_phone.regex' => 'Le format du numéro de téléphone n\'est pas valide.',
-            'reseller_id.exists' => 'Le revendeur sélectionné n\'existe pas.',
-            'date_depot_revendeur.required' => 'La date de dépôt est obligatoire pour une vente via revendeur.',
-            'trade_in.product_model_name.required' => 'Le modèle du téléphone repris est obligatoire.',
-            'trade_in.imei_recu.required' => 'L\'IMEI du téléphone repris est obligatoire.',
+            'sale_type.required' => 'Le type de vente est requis.',
+            'sale_type.in' => 'Le type de vente doit être "achat_direct" ou "troc".',
+            'prix_vente.required' => 'Le prix de vente est requis.',
+            'prix_vente.min' => 'Le prix de vente doit être positif.',
+            'date_vente_effective.required' => 'La date de vente est requise.',
+            'is_confirmed.required' => 'Le statut de confirmation est requis.',
+
+            'buyer_type.required' => 'Le type d\'acheteur est requis.',
+            'reseller_id.required_if' => 'Le revendeur est requis pour une vente revendeur.',
+            'payment_status.required_with' => 'Le statut de paiement est requis pour une vente revendeur.',
+            'amount_paid.lte' => 'Le montant payé ne peut pas dépasser le prix de vente.',
+            'payment_due_date.after_or_equal' => 'La date d\'échéance ne peut pas être dans le passé.',
+
+            'trade_in.modele_recu.required_if' => 'Le modèle reçu est requis pour un troc.',
+            'trade_in.imei_recu.required_if' => 'L\'IMEI reçu est requis pour un troc.',
             'trade_in.imei_recu.size' => 'L\'IMEI doit contenir exactement 15 chiffres.',
-            'trade_in.imei_recu.regex' => 'L\'IMEI doit contenir uniquement des chiffres.',
-            'trade_in.imei_recu.unique' => 'Cet IMEI est déjà enregistré dans le système.',
-            'trade_in.valeur_reprise.required' => 'La valeur de reprise est obligatoire.',
+            'trade_in.valeur_reprise.required_if' => 'La valeur de reprise est requise pour un troc.',
+            'trade_in.valeur_reprise.min' => 'La valeur de reprise doit être positive.',
+            'trade_in.valeur_reprise.lte' => 'La valeur de reprise ne peut pas dépasser le prix de vente.',
         ];
     }
 
-    /**
-     * Prepare the data for validation.
-     */
     protected function prepareForValidation(): void
     {
-        // Nettoyer le téléphone client
-        if ($this->has('client_phone') && $this->client_phone) {
+        // Convertir has_trade_in en booléen
+        if ($this->has('has_trade_in')) {
             $this->merge([
-                'client_phone' => $this->cleanPhoneNumber($this->client_phone),
+                'has_trade_in' => filter_var($this->has_trade_in, FILTER_VALIDATE_BOOLEAN),
             ]);
         }
 
-        // Nettoyer l'IMEI du troc
-        if ($this->has('trade_in.imei_recu') && $this->input('trade_in.imei_recu')) {
-            $tradeIn = $this->input('trade_in');
-            $tradeIn['imei_recu'] = preg_replace('/[^0-9]/', '', $tradeIn['imei_recu']);
-            $this->merge(['trade_in' => $tradeIn]);
+        // Ajouter sold_by automatiquement
+        $this->merge([
+            'sold_by' => Auth::id(),
+        ]);
+
+        // Si c'est un troc, calculer le complément si non fourni
+        if ($this->sale_type === 'troc' && $this->has('trade_in.valeur_reprise')) {
+            $valeurReprise = (float) ($this->input('trade_in.valeur_reprise') ?? 0);
+            $prixVente = (float) ($this->prix_vente ?? 0);
+
+            $this->merge([
+                'trade_in' => array_merge($this->input('trade_in', []), [
+                    'complement_especes' => $prixVente - $valeurReprise,
+                ]),
+            ]);
         }
 
-        // Définir le complément par défaut à 0 si non fourni
-        if ($this->has_trade_in && !$this->has('trade_in.complement_especes')) {
-            $tradeIn = $this->input('trade_in', []);
-            $tradeIn['complement_especes'] = 0;
-            $this->merge(['trade_in' => $tradeIn]);
+        // Pour vente directe, définir payment_status à paid par défaut
+        if ($this->buyer_type === 'direct') {
+            $this->merge([
+                'payment_status' => 'paid',
+                'amount_paid' => $this->prix_vente,
+                'payment_method' => $this->payment_method ?? 'cash',
+            ]);
         }
 
-        // Définir has_trade_in basé sur le sale_type
-        if ($this->has('sale_type')) {
-            $saleType = SaleType::tryFrom($this->sale_type);
-            if ($saleType && in_array($saleType, [SaleType::TROC, SaleType::TROC_AVEC_COMPLEMENT])) {
-                $this->merge(['has_trade_in' => true]);
+        // Pour revendeur sans paiement initial
+        if ($this->buyer_type === 'reseller' && $this->payment_status === 'unpaid') {
+            $this->merge([
+                'amount_paid' => 0,
+            ]);
+        }
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            // Vérifier que le produit est disponible
+            if ($this->product_id) {
+                $product = \App\Models\Product::find($this->product_id);
+                if ($product && !$product->isAvailable()) {
+                    $validator->errors()->add(
+                        'product_id',
+                        'Ce produit n\'est plus disponible à la vente.'
+                    );
+                }
             }
-        }
 
-        // Date effective de vente
-        if ($this->reseller_id) {
-            // Si revendeur, la date effective est la date de dépôt
-            $this->merge([
-                'date_vente_effective' => $this->date_depot_revendeur ?? now()->format('Y-m-d'),
-                'is_confirmed' => false, // En attente de confirmation
-            ]);
-        } else {
-            // Sinon, c'est aujourd'hui
-            $this->merge([
-                'date_vente_effective' => now()->format('Y-m-d'),
-                'is_confirmed' => true,
-            ]);
-        }
-    }
+            // Si troc, vérifier que tous les champs sont présents
+            if ($this->sale_type === 'troc') {
+                if (
+                    !$this->has('trade_in.modele_recu') ||
+                    !$this->has('trade_in.imei_recu') ||
+                    !$this->has('trade_in.valeur_reprise')
+                ) {
+                    $validator->errors()->add(
+                        'trade_in',
+                        'Les informations de reprise sont incomplètes pour un troc.'
+                    );
+                }
+            }
 
-    /**
-     * Get data to be validated from the request (after preparation).
-     */
-    public function validated($key = null, $default = null)
-    {
-        $validated = parent::validated($key, $default);
-
-        // Récupérer le produit pour avoir son prix d'achat
-        $product = Product::findOrFail($this->product_id);
-
-        // Ajouter les données calculées
-        $validated['prix_achat_produit'] = $product->prix_achat;
-        $validated['sold_by'] = $this->user()->id;
-        $validated['date_vente_effective'] = $this->date_vente_effective;
-        $validated['is_confirmed'] = $this->is_confirmed;
-
-        return $validated;
-    }
-
-    /**
-     * Nettoyer un numéro de téléphone
-     */
-    private function cleanPhoneNumber(?string $phone): ?string
-    {
-        if (!$phone) {
-            return null;
-        }
-
-        $cleaned = preg_replace('/[^0-9+]/', '', $phone);
-
-        if (str_starts_with($cleaned, '00229')) {
-            $cleaned = '+229' . substr($cleaned, 5);
-        }
-
-        if (str_starts_with($cleaned, '229') && !str_starts_with($cleaned, '+')) {
-            $cleaned = '+' . $cleaned;
-        }
-
-        if (!str_starts_with($cleaned, '+') && strlen($cleaned) === 8) {
-            $cleaned = '+229' . $cleaned;
-        }
-
-        return $cleaned;
+            // Vérifier la cohérence du montant payé
+            if ($this->buyer_type === 'reseller' && $this->payment_status === 'partial') {
+                if (!$this->has('amount_paid') || $this->amount_paid <= 0) {
+                    $validator->errors()->add(
+                        'amount_paid',
+                        'Le montant payé est requis pour un paiement partiel.'
+                    );
+                }
+            }
+        });
     }
 }

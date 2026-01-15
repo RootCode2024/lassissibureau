@@ -1,15 +1,18 @@
 <?php
 
-use App\Http\Controllers\CustomerReturnController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\ProductModelController;
-use App\Http\Controllers\ResellerController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\SaleController;
-use App\Http\Controllers\StockMovementController;
-use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SaleController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\TradeInController;
+use App\Http\Controllers\ResellerController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProductModelController;
+use App\Http\Controllers\StockMovementController;
+use App\Http\Controllers\CustomerReturnController;
+
+// Pas besoin d'importer les composants Livewire
 
 /*
 |--------------------------------------------------------------------------
@@ -24,10 +27,10 @@ Route::view('/', 'welcome');
 | Authenticated Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
 
     // Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', App\Livewire\Dashboard::class)->name('dashboard');
 
     // Profile (Breeze default)
     Route::view('profile', 'profile')->name('profile');
@@ -55,45 +58,71 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('products')->name('products.')->group(function () {
         // Lecture (tous)
         Route::get('/', [ProductController::class, 'index'])->name('index');
-        Route::get('/{product}', [ProductController::class, 'show'])->name('show');
-
-        // Recherche par IMEI
+        Route::get('/available', [ProductController::class, 'available'])->name('available');
+        Route::get('/needs-attention', [ProductController::class, 'needsAttention'])->name('needs-attention');
         Route::get('/search/imei', [ProductController::class, 'searchByImei'])->name('search.imei');
+        Route::get('/export', [ProductController::class, 'export'])->name('export');
 
         // Création et modification (Admin only)
         Route::middleware('admin')->group(function () {
-            Route::get('/create', [ProductController::class, 'create'])->name('create');
-            Route::post('/', [ProductController::class, 'store'])->name('store');
+            // CHANGEMENT ICI : Utiliser Livewire pour la création
+            Route::get('/create', App\Livewire\Products\CreateProduct::class)->name('create');
+
+            // La route store n'est plus nécessaire avec Livewire
+            // Route::post('/', [ProductController::class, 'store'])->name('store');
+
             Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('edit');
             Route::put('/{product}', [ProductController::class, 'update'])->name('update');
             Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
-
-            // Changement de prix
             Route::put('/{product}/prices', [ProductController::class, 'updatePrices'])->name('update-prices');
         });
+
+        // Vente rapide (Vendeurs)
+        Route::get('/{product}/quick-sell', [ProductController::class, 'quickSell'])
+            ->name('quick-sell')
+            ->middleware('vendeur');
+
+        Route::get('/{product}', [ProductController::class, 'show'])->name('show');
     });
+
+    // API Search (en dehors du groupe products)
+    Route::get('/api/products/search', [ProductController::class, 'apiSearch'])
+        ->name('api.products.search')
+        ->middleware('auth');
 
     /*
     |--------------------------------------------------------------------------
-    | Sales Management
+    | Sales Management (Livewire + Traditional)
     |--------------------------------------------------------------------------
     */
     Route::prefix('sales')->name('sales.')->group(function () {
-        // Lecture (tous, avec filtrage selon rôle)
+
+        // Liste
         Route::get('/', [SaleController::class, 'index'])->name('index');
-        Route::get('/{sale}', [SaleController::class, 'show'])->name('show');
 
-        // Création (Vendeurs et Admin)
+        // Création avec Livewire (Vendeurs et Admin)
         Route::middleware('vendeur')->group(function () {
-            Route::get('/create', [SaleController::class, 'create'])->name('create');
-            Route::post('/', [SaleController::class, 'store'])->name('store');
+            Route::get('/create', \App\Livewire\Sales\CreateSale::class)->name('create');
         });
 
-        // Confirmation ventes revendeurs (Admin only)
+        // Ventes revendeurs (Admin only) - Livewire
         Route::middleware('admin')->group(function () {
+            Route::get('/resellers', \App\Livewire\Sales\ResellerSales::class)->name('resellers');
+            Route::get('/pending', [SaleController::class, 'pending'])->name('pending');
+
+            // Paiements en attente - Livewire
+            Route::get('/payments/pending', \App\Livewire\Sales\PendingPayments::class)->name('payments.pending');
+
+            // Actions sur les ventes
             Route::post('/{sale}/confirm', [SaleController::class, 'confirm'])->name('confirm');
+            Route::post('/{sale}/return', [SaleController::class, 'returnFromReseller'])->name('return');
             Route::delete('/{sale}', [SaleController::class, 'destroy'])->name('destroy');
+
+            // Enregistrement de paiement
+            Route::post('/{sale}/payments', [SaleController::class, 'recordPayment'])->name('payments.record');
         });
+
+        Route::get('/{sale}', [SaleController::class, 'show'])->name('show');
     });
 
     /*
@@ -144,6 +173,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/create', [CustomerReturnController::class, 'create'])->name('create');
         Route::post('/', [CustomerReturnController::class, 'store'])->name('store');
         Route::get('/{customerReturn}', [CustomerReturnController::class, 'show'])->name('show');
+        Route::post('/{customerReturn}/process', [CustomerReturnController::class, 'processReturnedProduct'])->name('process');
     });
 
     /*
@@ -156,6 +186,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/daily', [ReportController::class, 'daily'])->name('daily');
         Route::get('/weekly', [ReportController::class, 'weekly'])->name('weekly');
         Route::get('/monthly', [ReportController::class, 'monthly'])->name('monthly');
+
+        // Téléchargement PDF
+        Route::get('/download-pdf', [ReportController::class, 'downloadPdf'])->name('download-pdf');
+
 
         // Rapports avancés (Admin only)
         Route::middleware('admin')->group(function () {
@@ -185,7 +219,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/{user}', [UserController::class, 'destroy'])->name('destroy');
 
         // Gestion des rôles
-        Route::put('/{user}/role', [UserController::class, 'updateRole'])->name('update-role');
+        Route::patch('/{user}/role', [UserController::class, 'updateRole'])->name('role');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Trade-ins Management (Admin only)
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('admin')->prefix('trade-ins')->name('trade-ins.')->group(function () {
+        Route::get('/pending', [TradeInController::class, 'pending'])->name('pending');
+        Route::get('/{tradeIn}/create-product', [TradeInController::class, 'create'])->name('create-product');
+        Route::post('/{tradeIn}/store-product', [TradeInController::class, 'storeProduct'])->name('store-product');
     });
 });
 

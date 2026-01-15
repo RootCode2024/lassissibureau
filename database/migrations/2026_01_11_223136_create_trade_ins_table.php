@@ -15,7 +15,7 @@ return new class extends Migration
             $table->foreignId('sale_id')->constrained()->cascadeOnDelete();
 
             // Produit reçu en troc
-            $table->foreignId('product_received_id')->constrained('products')->cascadeOnDelete();
+            $table->foreignId('product_received_id')->nullable()->constrained('products')->cascadeOnDelete();
 
             // Valeur du troc
             $table->decimal('valeur_reprise', 10, 2)->comment('Valeur du téléphone repris');

@@ -128,4 +128,36 @@ class TradeIn extends Model
         return $query->whereYear('created_at', now()->year)
             ->whereMonth('created_at', now()->month);
     }
+
+    /**
+     * Vérifier si le produit reçu a été créé
+     */
+    public function hasProductReceived(): bool
+    {
+        return $this->product_received_id !== null;
+    }
+
+    /**
+     * Vérifier si le troc est en attente de traitement
+     */
+    public function isPending(): bool
+    {
+        return $this->product_received_id === null;
+    }
+
+    /**
+     * Scope pour les trocs en attente (sans produit créé)
+     */
+    public function scopePending($query)
+    {
+        return $query->whereNull('product_received_id');
+    }
+
+    /**
+     * Scope pour les trocs traités (avec produit créé)
+     */
+    public function scopeProcessed($query)
+    {
+        return $query->whereNotNull('product_received_id');
+    }
 }

@@ -69,27 +69,15 @@ class StockMovementController extends Controller
         return view('stock-movements.show', compact('stockMovement'));
     }
 
-    /**
-     * Show form for creating a reception movement.
-     */
     public function createReception()
     {
         $this->authorize('create', StockMovement::class);
-
-        $products = Product::with('productModel')->get();
-
-        return view('stock-movements.create-reception', compact('products'));
+        return view('stock-movements.create-reception');
     }
 
-    /**
-     * Show form for creating an adjustment movement.
-     */
     public function createAdjustment()
     {
         $this->authorize('create', StockMovement::class);
-
-        $products = Product::with('productModel')->get();
-
-        return view('stock-movements.create-adjustment', compact('products'));
+        return view('stock-movements.create-adjustment');
     }
 }

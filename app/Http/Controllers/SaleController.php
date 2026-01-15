@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreSaleRequest;
-use App\Models\Product;
-use App\Models\ProductModel;
-use App\Models\Reseller;
 use App\Models\Sale;
-use App\Services\SaleService;
+use App\Models\Product;
+use App\Models\Reseller;
 use Illuminate\Http\Request;
+use App\Services\SaleService;
+use Illuminate\Support\Facades\Log;
+use App\Http\Requests\StoreSaleRequest;
+use App\Http\Requests\RecordPaymentRequest;
 
 class SaleController extends Controller
 {
@@ -26,7 +27,7 @@ class SaleController extends Controller
         $query = Sale::with(['product.productModel', 'seller', 'reseller']);
 
         // Filtrer selon le rôle
-        if ($request->user()->isVendeur()) {
+        if ($request->user()->hasRole('vendeur')) {
             $query->where('sold_by', $request->user()->id);
         }
 
@@ -49,48 +50,29 @@ class SaleController extends Controller
 
         $sales = $query->latest('date_vente_effective')->paginate(20);
 
-        return view('sales.index', compact('sales'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(Request $request)
-    {
-        $this->authorize('create', Sale::class);
-
-        // Récupérer le produit si fourni
-        $product = null;
-        if ($request->filled('product_id')) {
-            $product = Product::with('productModel')->find($request->product_id);
-
-            if ($product && !$product->isAvailable()) {
-                return back()->with('error', 'Ce produit n\'est pas disponible à la vente.');
-            }
+        // Statistiques
+        $statsQuery = Sale::confirmed();
+        if ($request->user()->hasRole('vendeur')) {
+            $statsQuery->where('sold_by', $request->user()->id);
         }
 
-        // Produits disponibles à la vente
-        $availableProducts = Product::inStock()
-            ->with('productModel')
-            ->get();
+        $stats = [
+            'today' => (clone $statsQuery)->today()->count(),
+            'month' => (clone $statsQuery)->thisMonth()->count(),
+        ];
 
-        // Revendeurs actifs
-        $resellers = Reseller::active()->orderBy('name')->get();
+        // Stats admin uniquement
+        if ($request->user()->hasRole('admin')) {
+            $monthSales = (clone $statsQuery)->thisMonth()->get();
+            $stats['revenue'] = $monthSales->sum('prix_vente');
+            $stats['profit'] = $monthSales->sum(fn($sale) => $sale->benefice);
+        }
 
-        return view('sales.create', compact('product', 'availableProducts', 'resellers'));
+        return view('sales.index', compact('sales', 'stats'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreSaleRequest $request)
-    {
-        $sale = $this->saleService->createSale($request->validated());
+    // NOTE: Les méthodes create() et store() ont été supprimées car remplacées par le composant Livewire CreateSale
 
-        return redirect()
-            ->route('sales.show', $sale)
-            ->with('success', 'Vente enregistrée avec succès.');
-    }
 
     /**
      * Display the specified resource.
@@ -99,7 +81,14 @@ class SaleController extends Controller
     {
         $this->authorize('view', $sale);
 
-        $sale->load(['product.productModel', 'seller', 'reseller', 'tradeIn.productReceived']);
+        $sale->load([
+            'product.productModel',
+            'seller',
+            'reseller',
+            'tradeIn.productReceived.productModel',
+            'customerReturn',
+            'payments.recorder'
+        ]);
 
         return view('sales.show', compact('sale'));
     }
@@ -111,13 +100,117 @@ class SaleController extends Controller
     {
         $this->authorize('confirm', $sale);
 
+        if ($sale->is_confirmed) {
+            return redirect()
+                ->back()
+                ->with('error', 'Cette vente est déjà confirmée.');
+        }
+
         $request->validate([
             'notes' => ['nullable', 'string', 'max:500'],
+            'payment_amount' => ['nullable', 'numeric', 'min:0', 'max:' . $sale->amount_remaining],
+            'payment_method' => ['nullable', 'string', 'in:cash,mobile_money,bank_transfer,check'],
         ]);
 
-        $sale = $this->saleService->confirmResellerSale($sale, $request->notes);
+        try {
+            $data = [
+                'notes' => $request->notes,
+            ];
 
-        return back()->with('success', 'Vente confirmée avec succès.');
+            if ($request->filled('payment_amount')) {
+                $data['payment_amount'] = $request->payment_amount;
+                $data['payment_method'] = $request->payment_method ?? 'cash';
+            }
+
+            $sale = $this->saleService->confirmResellerSale($sale, $data);
+
+            return redirect()
+                ->route('sales.show', $sale)
+                ->with('success', 'Vente confirmée avec succès.');
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Erreur lors de la confirmation : ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Return a product from reseller to stock.
+     */
+    public function returnFromReseller(Request $request, Sale $sale)
+    {
+        $this->authorize('returnFromReseller', $sale);
+
+        $request->validate([
+            'reason' => ['required', 'string', 'min:10', 'max:500'],
+        ], [
+            'reason.required' => 'Le motif du retour est requis.',
+            'reason.min' => 'Le motif doit contenir au moins 10 caractères.',
+        ]);
+
+        try {
+            $sale = $this->saleService->returnFromReseller($sale, $request->reason);
+
+            return redirect()
+                ->route('sales.index')
+                ->with('success', 'Produit retourné en stock avec succès.');
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Erreur lors du retour : ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Record a payment for a sale.
+     */
+    public function recordPayment(RecordPaymentRequest $request, Sale $sale)
+    {
+        $this->authorize('confirm', $sale);
+
+        try {
+            $payment = $this->saleService->recordPayment(
+                $sale,
+                $request->validated('amount'),
+                $request->validated()
+            );
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Paiement enregistré avec succès.',
+                    'payment' => $payment,
+                    'sale' => $sale->fresh(),
+                ]);
+            }
+
+            return redirect()
+                ->route('sales.show', $sale)
+                ->with('success', 'Paiement de ' . number_format($request->amount, 0, ',', ' ') . ' FCFA enregistré avec succès.');
+        } catch (\Exception $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erreur : ' . $e->getMessage(),
+                ], 422);
+            }
+
+            return redirect()
+                ->back()
+                ->with('error', 'Erreur : ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Display pending sales (reseller).
+     */
+    public function pending()
+    {
+        $this->authorize('viewPending', Sale::class);
+
+        $sales = $this->saleService->getPendingSales();
+
+        return view('sales.pending', compact('sales'));
     }
 
     /**
@@ -131,10 +224,16 @@ class SaleController extends Controller
             return back()->with('error', 'Impossible de supprimer une vente confirmée.');
         }
 
-        $sale->delete();
+        try {
+            $sale->delete();
 
-        return redirect()
-            ->route('sales.index')
-            ->with('success', 'Vente supprimée avec succès.');
+            return redirect()
+                ->route('sales.index')
+                ->with('success', 'Vente supprimée avec succès.');
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Erreur lors de la suppression : ' . $e->getMessage());
+        }
     }
 }

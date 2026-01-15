@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
-use App\Enums\StockMovementType;
 use App\Models\Product;
+use App\Enums\ProductState;
 use App\Models\StockMovement;
+use App\Enums\ProductLocation;
+use App\Enums\StockMovementType;
 use Illuminate\Support\Facades\DB;
 
 class StockService
@@ -18,20 +20,27 @@ class StockService
             $product = Product::findOrFail($data['product_id']);
 
             // Capturer le statut avant si non fourni
-            if (!isset($data['status_before'])) {
-                $data['status_before'] = $product->status->value;
+            if (!isset($data['state_before'])) {
+                $data['state_before'] = $product->state->value;
+            }
+            if (!isset($data['location_before'])) {
+                $data['location_before'] = $product->location->value;
             }
 
             // Créer le mouvement
             $movement = StockMovement::create($data);
 
             // Mettre à jour le statut du produit si fourni
-            if (isset($data['status_after'])) {
-                $product->update([
-                    'status' => $data['status_after'],
-                    'updated_by' => $data['user_id'],
-                ]);
+            $updates = ['updated_by' => $data['user_id']];
+
+            if (isset($data['state_after'])) {
+                $updates['state'] = $data['state_after'];
             }
+            if (isset($data['location_after'])) {
+                $updates['location'] = $data['location_after'];
+            }
+
+            $product->update($updates);
 
             return $movement->fresh(['product.productModel', 'user', 'sale', 'reseller']);
         });
@@ -100,7 +109,8 @@ class StockService
             'product_id' => $product->id,
             'type' => $type->value,
             'quantity' => abs($quantity),
-            'status_after' => $product->status->value,
+            'state_after' => $product->state->value,
+            'location_after' => $product->location->value,
             'justification' => $justification,
             'user_id' => $userId,
         ]);
@@ -115,7 +125,8 @@ class StockService
             'product_id' => $product->id,
             'type' => StockMovementType::ENVOI_REPARATION->value,
             'quantity' => 1,
-            'status_after' => \App\Enums\ProductStatus::A_REPARER->value,
+            'state_after' => ProductState::A_REPARER->value,
+            'location_after' => ProductLocation::EN_REPARATION->value,
             'notes' => $notes,
             'user_id' => $userId,
         ]);
@@ -130,7 +141,8 @@ class StockService
             'product_id' => $product->id,
             'type' => StockMovementType::RETOUR_REPARATION->value,
             'quantity' => 1,
-            'status_after' => \App\Enums\ProductStatus::REPARE->value,
+            'state_after' => ProductState::REPARE->value,
+            'location_after' => ProductLocation::BOUTIQUE->value,
             'notes' => $notes,
             'user_id' => $userId,
         ]);

@@ -40,13 +40,14 @@ class UserController extends Controller
     /**
      * Show the form for creating a new resource.
      */
+    /**
+     * Show the form for creating a new resource.
+     */
     public function create()
     {
         $this->authorize('create', User::class);
 
-        $roles = UserRole::options();
-
-        return view('users.create', compact('roles'));
+        return view('users.create');
     }
 
     /**
@@ -60,7 +61,6 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'role' => ['required', 'string', 'in:admin,vendeur'],
         ]);
 
         $user = User::create([
@@ -69,11 +69,12 @@ class UserController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        $user->assignRole($validated['role']);
+        // Force le rôle Vendeur
+        $user->assignRole('vendeur');
 
         return redirect()
             ->route('users.show', $user)
-            ->with('success', 'Utilisateur créé avec succès.');
+            ->with('success', 'Utilisateur vendeur créé avec succès.');
     }
 
     /**

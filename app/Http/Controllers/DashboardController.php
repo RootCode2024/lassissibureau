@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\ProductStatus;
+use App\Enums\ProductLocation;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\StockMovement;
@@ -22,9 +22,11 @@ class DashboardController extends Controller
         $stats = [
             // Stock
             'total_products_in_stock' => Product::inStock()->count(),
+            'products_available_for_sale' => Product::availableForSale()->count(),
             'products_low_stock' => $this->getProductsLowStock(),
             'products_chez_revendeur' => Product::chezRevendeur()->count(),
             'products_a_reparer' => Product::aReparer()->count(),
+            'products_en_reparation' => Product::enReparation()->count(),
 
             // Ventes du jour
             'sales_today' => $this->getSalesToday($user),
@@ -86,9 +88,9 @@ class DashboardController extends Controller
     {
         return DB::table('products')
             ->join('product_models', 'products.product_model_id', '=', 'product_models.id')
-            ->whereIn('products.status', [
-                ProductStatus::STOCK_BOUTIQUE->value,
-                ProductStatus::REPARE->value,
+            ->whereIn('products.location', [
+                ProductLocation::BOUTIQUE->value,
+                ProductLocation::EN_REPARATION->value,
             ])
             ->whereNull('products.deleted_at')
             ->select('product_models.id', DB::raw('COUNT(products.id) as stock_count'), 'product_models.stock_minimum')

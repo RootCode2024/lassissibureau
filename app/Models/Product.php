@@ -2,7 +2,8 @@
 
 namespace App\Models;
 
-use App\Enums\ProductStatus;
+use App\Enums\ProductState;
+use App\Enums\ProductLocation;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
@@ -21,7 +22,8 @@ class Product extends Model
         'product_model_id',
         'imei',
         'serial_number',
-        'status',
+        'state',
+        'location',
         'prix_achat',
         'prix_vente',
         'date_achat',
@@ -34,7 +36,8 @@ class Product extends Model
     ];
 
     protected $casts = [
-        'status' => ProductStatus::class,
+        'state' => ProductState::class,
+        'location' => ProductLocation::class,
         'prix_achat' => 'decimal:2',
         'prix_vente' => 'decimal:2',
         'date_achat' => 'date',
@@ -81,6 +84,16 @@ class Product extends Model
     public function sale(): HasOne
     {
         return $this->hasOne(Sale::class);
+    }
+
+    /**
+     * Vente en cours (pour produits chez revendeur)
+     */
+    public function currentSale(): HasOne
+    {
+        return $this->hasOne(Sale::class)
+            ->where('is_confirmed', false)
+            ->latestOfMany();
     }
 
     /**
@@ -139,15 +152,15 @@ class Product extends Model
      */
     public function isAvailable(): bool
     {
-        return $this->status->isAvailable();
+        return $this->state->isAvailable() && $this->location === ProductLocation::BOUTIQUE;
     }
 
     /**
-     * Vérifier si le produit est en stock physique
+     * Vérifier si le produit est en stock physique de la boutique
      */
-    public function isInStock(): bool
+    public function isInStore(): bool
     {
-        return $this->status->isInStock();
+        return $this->location->isInStock();
     }
 
     /**
@@ -155,10 +168,21 @@ class Product extends Model
      */
     public function scopeInStock($query)
     {
-        return $query->whereIn('status', [
-            ProductStatus::STOCK_BOUTIQUE->value,
-            ProductStatus::REPARE->value,
+        return $query->whereIn('location', [
+            ProductLocation::BOUTIQUE->value,
+            ProductLocation::EN_REPARATION->value,
         ]);
+    }
+
+    /**
+     * Scope pour les produits disponibles à la vente
+     */
+    public function scopeAvailableForSale($query)
+    {
+        return $query->whereIn('state', [
+            ProductState::DISPONIBLE->value,
+            ProductState::REPARE->value,
+        ])->where('location', ProductLocation::BOUTIQUE->value);
     }
 
     /**
@@ -166,7 +190,7 @@ class Product extends Model
      */
     public function scopeSold($query)
     {
-        return $query->where('status', ProductStatus::VENDU->value);
+        return $query->where('state', ProductState::VENDU->value);
     }
 
     /**
@@ -174,7 +198,7 @@ class Product extends Model
      */
     public function scopeChezRevendeur($query)
     {
-        return $query->where('status', ProductStatus::CHEZ_REVENDEUR->value);
+        return $query->where('location', ProductLocation::CHEZ_REVENDEUR->value);
     }
 
     /**
@@ -182,7 +206,15 @@ class Product extends Model
      */
     public function scopeAReparer($query)
     {
-        return $query->where('status', ProductStatus::A_REPARER->value);
+        return $query->where('state', ProductState::A_REPARER->value);
+    }
+
+    /**
+     * Scope pour les produits en réparation
+     */
+    public function scopeEnReparation($query)
+    {
+        return $query->where('location', ProductLocation::EN_REPARATION->value);
     }
 
     /**
@@ -194,26 +226,60 @@ class Product extends Model
     }
 
     /**
-     * Changer le statut et créer un mouvement de stock
+     * Scope pour filtrer par état
      */
-    public function changeStatus(
-        ProductStatus $newStatus,
+    public function scopeByState($query, ProductState|array $states)
+    {
+        if (is_array($states)) {
+            return $query->whereIn('state', array_map(fn($s) => $s->value, $states));
+        }
+        return $query->where('state', $states->value);
+    }
+
+    /**
+     * Scope pour filtrer par localisation
+     */
+    public function scopeByLocation($query, ProductLocation|array $locations)
+    {
+        if (is_array($locations)) {
+            return $query->whereIn('location', array_map(fn($l) => $l->value, $locations));
+        }
+        return $query->where('location', $locations->value);
+    }
+
+    /**
+     * Changer l'état et/ou la localisation et créer un mouvement de stock
+     */
+    public function changeStateAndLocation(
         string $movementType,
+        ?ProductState $newState = null,
+        ?ProductLocation $newLocation = null,
         ?int $userId = null,
         ?array $additionalData = []
     ): void {
-        $oldStatus = $this->status;
+        $oldState = $this->state;
+        $oldLocation = $this->location;
 
-        $this->update([
-            'status' => $newStatus,
-            'updated_by' => $userId ?? Auth::id(),
-        ]);
+        $updates = ['updated_by' => $userId ?? Auth::id()];
+
+        if ($newState) {
+            $updates['state'] = $newState;
+        }
+
+        if ($newLocation) {
+            $updates['location'] = $newLocation;
+        }
+
+        $this->update($updates);
 
         // Créer le mouvement de stock
         $this->stockMovements()->create(array_merge([
             'type' => $movementType,
-            'status_before' => $oldStatus->value,
-            'status_after' => $newStatus->value,
+            'quantity' => 1,
+            'state_before' => $oldState->value,
+            'location_before' => $oldLocation->value,
+            'state_after' => ($newState ?? $oldState)->value,
+            'location_after' => ($newLocation ?? $oldLocation)->value,
             'user_id' => $userId ?? Auth::id(),
         ], $additionalData));
     }

@@ -13,7 +13,7 @@ new class extends Component
     public string $password_confirmation = '';
 
     /**
-     * Update the password for the currently authenticated user.
+     * Met à jour le mot de passe de l'utilisateur connecté.
      */
     public function updatePassword(): void
     {
@@ -36,44 +36,72 @@ new class extends Component
 
         $this->dispatch('password-updated');
     }
-}; ?>
+};
+?>
 
 <section>
     <header>
         <h2 class="text-lg font-medium text-gray-900">
-            {{ __('Update Password') }}
+            Changer le mot de passe
         </h2>
 
         <p class="mt-1 text-sm text-gray-600">
-            {{ __('Ensure your account is using a long, random password to stay secure.') }}
+            Assurez-vous que votre compte utilise un mot de passe long et sécurisé.
         </p>
     </header>
 
     <form wire:submit="updatePassword" class="mt-6 space-y-6">
+
+        <!-- Mot de passe actuel -->
         <div>
-            <x-input-label for="update_password_current_password" :value="__('Current Password')" />
-            <x-text-input wire:model="current_password" id="update_password_current_password" name="current_password" type="password" class="mt-1 block w-full" autocomplete="current-password" />
+            <x-input-label for="update_password_current_password" value="Mot de passe actuel" />
+            <x-text-input
+                wire:model="current_password"
+                id="update_password_current_password"
+                name="current_password"
+                type="password"
+                class="mt-1 block w-full"
+                autocomplete="current-password"
+            />
             <x-input-error :messages="$errors->get('current_password')" class="mt-2" />
         </div>
 
+        <!-- Nouveau mot de passe -->
         <div>
-            <x-input-label for="update_password_password" :value="__('New Password')" />
-            <x-text-input wire:model="password" id="update_password_password" name="password" type="password" class="mt-1 block w-full" autocomplete="new-password" />
+            <x-input-label for="update_password_password" value="Nouveau mot de passe" />
+            <x-text-input
+                wire:model="password"
+                id="update_password_password"
+                name="password"
+                type="password"
+                class="mt-1 block w-full"
+                autocomplete="new-password"
+            />
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
+        <!-- Confirmation du mot de passe -->
         <div>
-            <x-input-label for="update_password_password_confirmation" :value="__('Confirm Password')" />
-            <x-text-input wire:model="password_confirmation" id="update_password_password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full" autocomplete="new-password" />
+            <x-input-label for="update_password_password_confirmation" value="Confirmer le mot de passe" />
+            <x-text-input
+                wire:model="password_confirmation"
+                id="update_password_password_confirmation"
+                name="password_confirmation"
+                type="password"
+                class="mt-1 block w-full"
+                autocomplete="new-password"
+            />
             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
         </div>
 
+        <!-- Bouton enregistrer -->
         <div class="flex items-center gap-4">
-            <x-primary-button>{{ __('Save') }}</x-primary-button>
+            <x-primary-button>Enregistrer</x-primary-button>
 
             <x-action-message class="me-3" on="password-updated">
-                {{ __('Saved.') }}
+                Enregistré.
             </x-action-message>
         </div>
+
     </form>
 </section>
