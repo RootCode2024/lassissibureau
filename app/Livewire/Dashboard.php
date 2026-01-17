@@ -41,7 +41,7 @@ class Dashboard extends Component
                 DB::raw('DATE(date_vente_effective) as date'),
                 DB::raw('COUNT(*) as count'),
                 DB::raw('SUM(prix_vente) as revenue'),
-                DB::raw('SUM(benefice) as profit')
+                DB::raw('SUM(prix_vente - prix_achat_produit) as profit')
             )
             ->groupBy('date')
             ->orderBy('date')
@@ -84,33 +84,25 @@ class Dashboard extends Component
     public function render()
     {
         // Stats générales - Ventes confirmées uniquement
+        // Récupérer les ventes du jour pour calculer le bénéfice (attribut calculé)
+        $salesToday = Sale::whereDate('date_vente_effective', today())
+            ->where('is_confirmed', true)
+            ->get();
+
+        // Récupérer les ventes du mois pour calculer le bénéfice
+        $salesMonth = Sale::whereMonth('date_vente_effective', now()->month)
+            ->whereYear('date_vente_effective', now()->year)
+            ->where('is_confirmed', true)
+            ->get();
+
         $stats = [
-            'sales_today' => Sale::whereDate('date_vente_effective', today())
-                ->where('is_confirmed', true)
-                ->count(),
+            'sales_today' => $salesToday->count(),
+            'revenue_today' => $salesToday->sum('prix_vente'),
+            'profit_today' => $salesToday->sum(fn ($sale) => $sale->benefice),
 
-            'revenue_today' => Sale::whereDate('date_vente_effective', today())
-                ->where('is_confirmed', true)
-                ->sum('prix_vente') ?? 0,
-
-            'profit_today' => Sale::whereDate('date_vente_effective', today())
-                ->where('is_confirmed', true)
-                ->sum('benefice') ?? 0,
-
-            'sales_month' => Sale::whereMonth('date_vente_effective', now()->month)
-                ->whereYear('date_vente_effective', now()->year)
-                ->where('is_confirmed', true)
-                ->count(),
-
-            'revenue_month' => Sale::whereMonth('date_vente_effective', now()->month)
-                ->whereYear('date_vente_effective', now()->year)
-                ->where('is_confirmed', true)
-                ->sum('prix_vente') ?? 0,
-
-            'profit_month' => Sale::whereMonth('date_vente_effective', now()->month)
-                ->whereYear('date_vente_effective', now()->year)
-                ->where('is_confirmed', true)
-                ->sum('benefice') ?? 0,
+            'sales_month' => $salesMonth->count(),
+            'revenue_month' => $salesMonth->sum('prix_vente'),
+            'profit_month' => $salesMonth->sum(fn ($sale) => $sale->benefice),
 
             'total_products_in_stock' => Product::whereIn('location', ['boutique', 'en_reparation'])
                 ->count(),

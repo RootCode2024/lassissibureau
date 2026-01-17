@@ -295,8 +295,6 @@ class ProductsTable extends Component
         $stats = $this->step === 2 ? $this->stats : ['total' => 0, 'available' => 0, 'chez_revendeur' => 0, 'a_reparer' => 0];
         $benchmarks['stats'] = round((microtime(true) - $start) * 1000, 2);
 
-        logger()->info('Benchmarks', $benchmarks);
-
         return view('livewire.products-table', [
             'categories' => $categories,
             'products' => $products,

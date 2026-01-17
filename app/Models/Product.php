@@ -167,7 +167,7 @@ class Product extends Model
     /**
      * Scope pour les produits en stock
      */
-    public function scopeInStock($query)
+    public function scopeInStock(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->whereIn('location', [
             ProductLocation::BOUTIQUE->value,
@@ -178,7 +178,7 @@ class Product extends Model
     /**
      * Scope pour les produits disponibles à la vente
      */
-    public function scopeAvailableForSale($query)
+    public function scopeAvailableForSale(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->whereIn('state', [
             ProductState::DISPONIBLE->value,
@@ -189,7 +189,7 @@ class Product extends Model
     /**
      * Scope pour les produits vendus
      */
-    public function scopeSold($query)
+    public function scopeSold(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('state', ProductState::VENDU->value);
     }
@@ -197,7 +197,7 @@ class Product extends Model
     /**
      * Scope pour les produits chez revendeurs
      */
-    public function scopeChezRevendeur($query)
+    public function scopeChezRevendeur(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('location', ProductLocation::CHEZ_REVENDEUR->value);
     }
@@ -205,7 +205,7 @@ class Product extends Model
     /**
      * Scope pour les produits à réparer
      */
-    public function scopeAReparer($query)
+    public function scopeAReparer(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('state', ProductState::A_REPARER->value);
     }
@@ -213,7 +213,7 @@ class Product extends Model
     /**
      * Scope pour les produits en réparation
      */
-    public function scopeEnReparation($query)
+    public function scopeEnReparation(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('location', ProductLocation::EN_REPARATION->value);
     }
@@ -221,7 +221,7 @@ class Product extends Model
     /**
      * Scope pour recherche par IMEI
      */
-    public function scopeByImei($query, string $imei)
+    public function scopeByImei(\Illuminate\Database\Eloquent\Builder $query, string $imei): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('imei', $imei);
     }
@@ -229,7 +229,7 @@ class Product extends Model
     /**
      * Scope pour filtrer par état
      */
-    public function scopeByState($query, ProductState|array $states)
+    public function scopeByState(\Illuminate\Database\Eloquent\Builder $query, ProductState|array $states): \Illuminate\Database\Eloquent\Builder
     {
         if (is_array($states)) {
             return $query->whereIn('state', array_map(fn ($s) => $s->value, $states));
@@ -241,7 +241,7 @@ class Product extends Model
     /**
      * Scope pour filtrer par localisation
      */
-    public function scopeByLocation($query, ProductLocation|array $locations)
+    public function scopeByLocation(\Illuminate\Database\Eloquent\Builder $query, ProductLocation|array $locations): \Illuminate\Database\Eloquent\Builder
     {
         if (is_array($locations)) {
             return $query->whereIn('location', array_map(fn ($l) => $l->value, $locations));

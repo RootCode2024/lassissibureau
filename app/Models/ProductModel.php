@@ -202,7 +202,7 @@ class ProductModel extends Model
     /**
      * Scope pour les modèles actifs
      */
-    public function scopeActive($query)
+    public function scopeActive(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('is_active', true);
     }
@@ -210,7 +210,7 @@ class ProductModel extends Model
     /**
      * Scope pour les téléphones uniquement
      */
-    public function scopeTelephones($query)
+    public function scopeTelephones(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('category', 'telephone');
     }
@@ -218,27 +218,25 @@ class ProductModel extends Model
     /**
      * Scope pour les accessoires uniquement
      */
-    public function scopeAccessoires($query)
+    public function scopeAccessoires(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('category', 'accessoire');
     }
 
     /**
      * Scope pour les modèles en stock bas
+     * Utilise une sous-requête pour comparer le stock actuel avec le minimum
      */
-    public function scopeLowStock($query)
+    public function scopeLowStock(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
-        return $query->whereHas('productsInStock', function ($q) {
-            // Ne compte que les produits en stock
-        }, '<=', function ($query) {
-            return $query->select('stock_minimum');
-        });
+        return $query->withCount(['productsInStock as current_stock'])
+            ->having('current_stock', '<=', \Illuminate\Support\Facades\DB::raw('stock_minimum'));
     }
 
     /**
      * Scope avec statistiques de stock
      */
-    public function scopeWithStockStats($query)
+    public function scopeWithStockStats(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->withCount([
             'products',

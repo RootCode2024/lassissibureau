@@ -127,7 +127,7 @@ class User extends Authenticatable
     /**
      * Scope pour les admins uniquement
      */
-    public function scopeAdmins($query)
+    public function scopeAdmins(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->role(UserRole::ADMIN->value);
     }
@@ -135,7 +135,7 @@ class User extends Authenticatable
     /**
      * Scope pour les vendeurs uniquement
      */
-    public function scopeVendeurs($query)
+    public function scopeVendeurs(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->role(UserRole::VENDEUR->value);
     }

@@ -212,7 +212,7 @@ class Sale extends Model
     /**
      * Scope pour les ventes confirmées
      */
-    public function scopeConfirmed($query)
+    public function scopeConfirmed(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('is_confirmed', true);
     }
@@ -220,7 +220,7 @@ class Sale extends Model
     /**
      * Scope pour les ventes en attente (chez revendeur)
      */
-    public function scopePending($query)
+    public function scopePending(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('is_confirmed', false)
             ->whereNotNull('reseller_id');
@@ -229,7 +229,7 @@ class Sale extends Model
     /**
      * Scope pour les ventes impayées
      */
-    public function scopeUnpaid($query)
+    public function scopeUnpaid(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('payment_status', PaymentStatus::UNPAID);
     }
@@ -237,7 +237,7 @@ class Sale extends Model
     /**
      * Scope pour les ventes partiellement payées
      */
-    public function scopePartiallyPaid($query)
+    public function scopePartiallyPaid(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('payment_status', PaymentStatus::PARTIAL);
     }
@@ -245,7 +245,7 @@ class Sale extends Model
     /**
      * Scope pour les ventes avec paiement en attente
      */
-    public function scopeWithPendingPayment($query)
+    public function scopeWithPendingPayment(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->whereIn('payment_status', [
             PaymentStatus::UNPAID,
@@ -256,7 +256,7 @@ class Sale extends Model
     /**
      * Scope pour les paiements en retard
      */
-    public function scopeOverdue($query)
+    public function scopeOverdue(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->whereIn('payment_status', [
             PaymentStatus::UNPAID,
@@ -268,7 +268,7 @@ class Sale extends Model
     /**
      * Scope pour les ventes d'une date spécifique
      */
-    public function scopeForDate($query, $date)
+    public function scopeForDate(\Illuminate\Database\Eloquent\Builder $query, $date): \Illuminate\Database\Eloquent\Builder
     {
         return $query->whereDate('date_vente_effective', $date);
     }
@@ -276,7 +276,7 @@ class Sale extends Model
     /**
      * Scope pour les ventes d'une période
      */
-    public function scopeBetweenDates($query, $startDate, $endDate)
+    public function scopeBetweenDates(\Illuminate\Database\Eloquent\Builder $query, $startDate, $endDate): \Illuminate\Database\Eloquent\Builder
     {
         return $query->whereBetween('date_vente_effective', [$startDate, $endDate]);
     }
@@ -284,7 +284,7 @@ class Sale extends Model
     /**
      * Scope pour les ventes du jour
      */
-    public function scopeToday($query)
+    public function scopeToday(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->whereDate('date_vente_effective', today());
     }
@@ -292,7 +292,7 @@ class Sale extends Model
     /**
      * Scope pour les ventes de la semaine
      */
-    public function scopeThisWeek($query)
+    public function scopeThisWeek(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->whereBetween('date_vente_effective', [
             now()->startOfWeek(),
@@ -303,7 +303,7 @@ class Sale extends Model
     /**
      * Scope pour les ventes du mois
      */
-    public function scopeThisMonth($query)
+    public function scopeThisMonth(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->whereYear('date_vente_effective', now()->year)
             ->whereMonth('date_vente_effective', now()->month);
@@ -312,7 +312,7 @@ class Sale extends Model
     /**
      * Scope pour les ventes par type
      */
-    public function scopeByType($query, SaleType $type)
+    public function scopeByType(\Illuminate\Database\Eloquent\Builder $query, SaleType $type): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('sale_type', $type->value);
     }
@@ -320,7 +320,7 @@ class Sale extends Model
     /**
      * Scope pour les ventes par vendeur
      */
-    public function scopeBySeller($query, int $sellerId)
+    public function scopeBySeller(\Illuminate\Database\Eloquent\Builder $query, int $sellerId): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('sold_by', $sellerId);
     }
@@ -328,7 +328,7 @@ class Sale extends Model
     /**
      * Scope pour les ventes par revendeur
      */
-    public function scopeByReseller($query, int $resellerId)
+    public function scopeByReseller(\Illuminate\Database\Eloquent\Builder $query, int $resellerId): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('reseller_id', $resellerId);
     }
