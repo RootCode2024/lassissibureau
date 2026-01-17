@@ -354,4 +354,31 @@ class ProductController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
+
+    /**
+     * Liste des produits à renvoyer au fournisseur ou déjà chez le fournisseur.
+     */
+    public function supplierReturns()
+    {
+        $this->authorize('viewAny', Product::class);
+
+        // Produits à renvoyer : en boutique mais marqués comme retour/perdu/à réparer
+        $toReturn = Product::with(['productModel', 'lastMovement'])
+            ->where('location', ProductLocation::BOUTIQUE->value)
+            ->whereIn('state', [
+                ProductState::RETOUR->value,
+                ProductState::PERDU->value,
+                ProductState::A_REPARER->value,
+            ])
+            ->get();
+
+        // Produits déjà chez le fournisseur
+        $atSupplier = Product::with(['productModel', 'lastMovement'])
+            ->where('location', ProductLocation::FOURNISSEUR->value)
+            ->latest('updated_at')
+            ->limit(50)
+            ->get();
+
+        return view('products.supplier-returns', compact('toReturn', 'atSupplier'));
+    }
 }

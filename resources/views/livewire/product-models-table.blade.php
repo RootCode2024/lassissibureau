@@ -159,7 +159,7 @@
                                     <div class="flex items-center gap-3">
                                         @php
                                             $iconMap = ['telephone' => 'smartphone', 'tablette' => 'tablet', 'pc' => 'monitor', 'accessoire' => 'box'];
-                                            $icon = $iconMap[$model->category] ?? 'box';
+                                            $icon = $iconMap[$model->category->value] ?? 'box';
                                         @endphp
                                         <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                                             <i data-lucide="{{ $icon }}" class="w-5 h-5 text-gray-600"></i>
@@ -176,7 +176,7 @@
                                         $categoryLabels = ['telephone' => '📱 Téléphone', 'tablette' => '💻 Tablette', 'pc' => '🖥️ Ordinateur', 'accessoire' => '🎧 Accessoire'];
                                     @endphp
                                     <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200 whitespace-nowrap">
-                                        {{ $categoryLabels[$model->category] ?? ucfirst($model->category) }}
+                                        {{ $categoryLabels[$model->category->value] ?? ucfirst($model->category->value) }}
                                     </span>
                                 </td>
 
@@ -251,7 +251,7 @@
                         {{-- Icon --}}
                         @php
                             $iconMap = ['telephone' => 'smartphone', 'tablette' => 'tablet', 'pc' => 'monitor', 'accessoire' => 'box'];
-                            $icon = $iconMap[$model->category] ?? 'box';
+                            $icon = $iconMap[$model->category->value] ?? 'box';
                         @endphp
                         <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                             <i data-lucide="{{ $icon }}" class="w-6 h-6 text-gray-600"></i>
@@ -283,7 +283,7 @@
                                     @php
                                         $categoryIcons = ['telephone' => '📱', 'tablette' => '💻', 'pc' => '🖥️', 'accessoire' => '🎧'];
                                     @endphp
-                                    <p class="text-xl">{{ $categoryIcons[$model->category] ?? '📦' }}</p>
+                                    <p class="text-xl">{{ $categoryIcons[$model->category->value] ?? '📦' }}</p>
                                 </div>
                                 <div class="text-center p-2.5 rounded-lg border {{ $model->products_in_stock_count < $model->stock_minimum ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100' }}">
                                     <p class="text-xs {{ $model->products_in_stock_count < $model->stock_minimum ? 'text-red-600' : 'text-gray-500' }} mb-1">Stock</p>
@@ -332,7 +332,7 @@
                     <div class="flex items-start gap-2.5 mb-2.5">
                         @php
                             $iconMap = ['telephone' => 'smartphone', 'tablette' => 'tablet', 'pc' => 'monitor', 'accessoire' => 'box'];
-                            $icon = $iconMap[$model->category] ?? 'box';
+                            $icon = $iconMap[$model->category->value] ?? 'box';
                         @endphp
                         <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                             <i data-lucide="{{ $icon }}" class="w-5 h-5 text-gray-600"></i>
@@ -361,7 +361,7 @@
                             @php
                                 $categoryIcons = ['telephone' => '📱', 'tablette' => '💻', 'pc' => '🖥️', 'accessoire' => '🎧'];
                             @endphp
-                            <p class="text-base leading-none">{{ $categoryIcons[$model->category] ?? '📦' }}</p>
+                            <p class="text-base leading-none">{{ $categoryIcons[$model->category->value] ?? '📦' }}</p>
                         </div>
                         <div class="text-center p-2 rounded-lg {{ $model->products_in_stock_count < $model->stock_minimum ? 'bg-red-50' : 'bg-gray-50' }}">
                             <p class="text-[10px] {{ $model->products_in_stock_count < $model->stock_minimum ? 'text-red-600' : 'text-gray-500' }} mb-0.5">Stock</p>

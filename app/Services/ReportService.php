@@ -80,7 +80,23 @@ class ReportService
             ->orderBy('date_depot_revendeur')
             ->get();
 
-        // PAGE 3: Stocks disponibles actuellement
+        // PAGE 3: Produits en réparation (tous les états liés à la réparation)
+        $repairs = Product::with('productModel')
+            ->where(function ($q) {
+                $q->where('state', ProductState::A_REPARER->value)
+                    ->orWhere('state', ProductState::REPARE->value)
+                    ->orWhere('location', ProductLocation::EN_REPARATION->value);
+            })
+            ->orderBy('product_model_id')
+            ->get();
+
+        // PAGE 4: Mouvements de stock de la période
+        $movements = \App\Models\StockMovement::with(['product.productModel', 'user'])
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // PAGE 5: Stocks disponibles actuellement
         $stocks = Product::with('productModel')
             ->whereIn('state', [ProductState::DISPONIBLE->value, ProductState::REPARE->value])
             ->where('location', ProductLocation::BOUTIQUE->value)
@@ -94,6 +110,15 @@ class ReportService
             'total_revenue' => $sales->sum('prix_vente'),
             'total_profit' => $sales->sum('benefice'),
             'total_reseller_sales' => $resellerSales->count(),
+            // Réparations
+            'total_repairs' => $repairs->count(),
+            'repairs_awaiting' => $repairs->where('state', ProductState::A_REPARER->value)->count(),
+            'repairs_in_progress' => $repairs->where('location', ProductLocation::EN_REPARATION->value)->count(),
+            'repairs_done' => $repairs->where('state', ProductState::REPARE->value)
+                ->where('location', ProductLocation::BOUTIQUE->value)->count(),
+            // Mouvements
+            'total_movements' => $movements->count(),
+            // Stock
             'total_stock_available' => $stocks->count(),
             'total_stock_value' => $stocks->sum('prix_vente'),
         ];
@@ -101,6 +126,8 @@ class ReportService
         return [
             'sales' => $sales,
             'reseller_sales' => $resellerSales,
+            'repairs' => $repairs,
+            'movements' => $movements,
             'stocks' => $stocks,
             'stats' => $stats,
         ];

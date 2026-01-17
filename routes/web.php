@@ -61,6 +61,7 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
         })->name('index');
         Route::get('/available', [ProductController::class, 'available'])->name('available');
         Route::get('/needs-attention', [ProductController::class, 'needsAttention'])->name('needs-attention');
+        Route::get('/supplier-returns', [ProductController::class, 'supplierReturns'])->name('supplier-returns');
         Route::get('/search/imei', [ProductController::class, 'searchByImei'])->name('search.imei');
         Route::get('/export', [ProductController::class, 'export'])->name('export');
         Route::get('/create', App\Livewire\Products\CreateProduct::class)->name('create');
@@ -224,14 +225,26 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Trade-ins Management (Admin only)
+    | Trade-ins Management
     |--------------------------------------------------------------------------
     */
-    Route::middleware('admin')->prefix('trade-ins')->name('trade-ins.')->group(function () {
-        Route::get('/pending', [TradeInController::class, 'pending'])->name('pending');
-        Route::get('/{tradeIn}/create-product', [TradeInController::class, 'create'])->name('create-product');
-        Route::post('/{tradeIn}/store-product', [TradeInController::class, 'storeProduct'])->name('store-product');
+    Route::prefix('trade-ins')->name('trade-ins.')->group(function () {
+        Route::get('/', [TradeInController::class, 'index'])->name('index'); // Accessible Vendeurs + Admins
+
+        // Actions Admin uniquement
+        Route::middleware('admin')->group(function () {
+            Route::get('/pending', [TradeInController::class, 'pending'])->name('pending');
+            Route::get('/{tradeIn}/create-product', [TradeInController::class, 'create'])->name('create-product');
+            Route::post('/{tradeIn}/store-product', [TradeInController::class, 'storeProduct'])->name('store-product');
+        });
     });
+    /*
+    |--------------------------------------------------------------------------
+    | Activity Logs
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('admin')->get('/activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index'])->name('activity-logs.index');
+
 });
 
 /*

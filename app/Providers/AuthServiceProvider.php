@@ -16,6 +16,7 @@ use App\Policies\SalePolicy;
 use App\Policies\TradeInPolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\Gate;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -48,5 +49,7 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('reports.viewOwn', function (User $user) {
             return $user->isVendeur() || $user->isAdmin();
         });
+
+
     }
 }

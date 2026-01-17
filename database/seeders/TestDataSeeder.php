@@ -208,7 +208,7 @@ class TestDataSeeder extends Seeder
         return match ($type) {
             StockMovementType::ENVOI_REPARATION => [
                 ProductState::A_REPARER,
-                ProductLocation::EN_REPARATION
+                ProductLocation::BOUTIQUE
             ],
             StockMovementType::RETOUR_REPARATION => [
                 ProductState::DISPONIBLE,

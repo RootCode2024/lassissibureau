@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Rapport de Ventes - Du {{ $startDate }} au {{ $endDate }}</title>
+    <title>Rapport - Du {{ $startDate }} au {{ $endDate }}</title>
     <style>
         @page {
             margin: 0;
@@ -81,6 +81,12 @@
         .stat.accent-red::before {
             background: #dc2626;
         }
+        .stat.accent-orange::before {
+            background: #f59e0b;
+        }
+        .stat.accent-purple::before {
+            background: #8b5cf6;
+        }
         .stat-label {
             font-size: 8px;
             font-weight: 600;
@@ -101,6 +107,12 @@
         }
         .stat-value.red {
             color: #dc2626;
+        }
+        .stat-value.orange {
+            color: #f59e0b;
+        }
+        .stat-value.purple {
+            color: #8b5cf6;
         }
         .stat-suffix {
             font-size: 9px;
@@ -198,6 +210,18 @@
             background: #dc2626;
             color: #ffffff;
         }
+        .badge-warning {
+            background: #f59e0b;
+            color: #ffffff;
+        }
+        .badge-purple {
+            background: #8b5cf6;
+            color: #ffffff;
+        }
+        .badge-info {
+            background: #3b82f6;
+            color: #ffffff;
+        }
         
         /* SUMMARY */
         .summary {
@@ -258,42 +282,48 @@
         .red {
             color: #dc2626;
         }
+        .orange {
+            color: #f59e0b;
+        }
+        .purple {
+            color: #8b5cf6;
+        }
     </style>
 </head>
 <body>
     {{-- PAGE 1: VENTES --}}
     <div class="hero">
         <div class="hero-title">VENTES</div>
-        <div class="hero-date">{{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} — {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}</div>
+        <div class="hero-date">Du {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} au {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}</div>
     </div>
 
     <div class="stats">
         <div class="stat">
-            <div class="stat-label">Ventes</div>
+            <div class="stat-label">Nombre de ventes</div>
             <div class="stat-value">{{ $report['stats']['total_sales'] }}</div>
         </div>
         <div class="stat">
-            <div class="stat-label">Chiffre d'Affaires</div>
+            <div class="stat-label">Total vendu</div>
             <div class="stat-value">{{ number_format($report['stats']['total_revenue'], 0, ',', ' ') }}<span class="stat-suffix">FCFA</span></div>
         </div>
         <div class="stat accent-green">
-            <div class="stat-label">Bénéfices</div>
+            <div class="stat-label">Gains</div>
             <div class="stat-value green">{{ number_format($report['stats']['total_profit'], 0, ',', ' ') }}<span class="stat-suffix">FCFA</span></div>
         </div>
     </div>
 
     <div class="section">
-        <div class="section-title">Transactions</div>
+        <div class="section-title">Liste des ventes</div>
     </div>
     
     <table>
         <thead>
             <tr>
                 <th style="width: 9%">Date</th>
-                <th style="width: 11%">Catégorie</th>
+                <th style="width: 11%">Type</th>
                 <th style="width: 24%">Produit</th>
-                <th style="width: 14%">IMEI/Série</th>
-                <th style="width: 12%">Montant</th>
+                <th style="width: 14%">IMEI</th>
+                <th style="width: 12%">Prix</th>
                 <th style="width: 18%">Client</th>
                 <th style="width: 7%">Heure</th>
             </tr>
@@ -312,18 +342,18 @@
                 @if($sale->tradeIn)
                     <tr class="troc-row">
                         <td colspan="7">
-                            <span class="troc-badge">TROC</span>
+                            <span class="troc-badge">ECHANGE</span>
                             {{ $sale->tradeIn->modele_recu }} · 
                             {{ $sale->tradeIn->imei_recu }} · 
-                            Reprise {{ number_format($sale->tradeIn->valeur_reprise, 0, ',', ' ') }} · 
-                            Complément {{ number_format($sale->tradeIn->complement_especes, 0, ',', ' ') }}
-                            @if($sale->tradeIn->etat_recu) · {{ $sale->tradeIn->etat_recu }}@endif
+                            Reprise: {{ number_format($sale->tradeIn->valeur_reprise, 0, ',', ' ') }} · 
+                            Reste a payer: {{ number_format($sale->tradeIn->complement_especes, 0, ',', ' ') }}
+                            @if($sale->tradeIn->etat_recu) · Etat: {{ $sale->tradeIn->etat_recu }}@endif
                         </td>
                     </tr>
                 @endif
             @empty
                 <tr>
-                    <td colspan="7" class="empty">Aucune vente</td>
+                    <td colspan="7" class="empty">Pas de ventes pour cette periode</td>
                 </tr>
             @endforelse
         </tbody>
@@ -334,50 +364,52 @@
     {{-- PAGE 2: REVENDEURS --}}
     <div class="hero">
         <div class="hero-title">REVENDEURS</div>
-        <div class="hero-date">{{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} — {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}</div>
+        <div class="hero-date">Du {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} au {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}</div>
     </div>
 
     <div class="stats">
         <div class="stat">
-            <div class="stat-label">Sorties</div>
+            <div class="stat-label">Produits donnes</div>
             <div class="stat-value">{{ $report['stats']['total_reseller_sales'] }}</div>
         </div>
         <div class="stat">
-            <div class="stat-label">Total</div>
+            <div class="stat-label">Valeur totale</div>
             <div class="stat-value">{{ number_format($report['reseller_sales']->sum('prix_vente'), 0, ',', ' ') }}<span class="stat-suffix">FCFA</span></div>
         </div>
         <div class="stat accent-red">
-            <div class="stat-label">Impayés</div>
+            <div class="stat-label">Pas encore paye</div>
             <div class="stat-value red">{{ number_format($report['reseller_sales']->where('payment_status.value', '!=', 'paid')->sum('amount_remaining'), 0, ',', ' ') }}<span class="stat-suffix">FCFA</span></div>
         </div>
     </div>
 
     <div class="section">
-        <div class="section-title">Dépôts</div>
+        <div class="section-title">Produits chez les revendeurs</div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th style="width: 12%">Date</th>
-                <th style="width: 22%">Revendeur</th>
-                <th style="width: 30%">Produit</th>
+                <th style="width: 10%">Date</th>
+                <th style="width: 6%">Heure</th>
+                <th style="width: 20%">Revendeur</th>
+                <th style="width: 28%">Produit</th>
                 <th style="width: 14%">IMEI</th>
-                <th style="width: 12%">Montant</th>
-                <th style="width: 10%">Statut</th>
+                <th style="width: 12%">Prix</th>
+                <th style="width: 10%">Paiement</th>
             </tr>
         </thead>
         <tbody>
             @forelse($report['reseller_sales'] as $sale)
                 <tr>
                     <td>{{ $sale->date_depot_revendeur ? $sale->date_depot_revendeur->format('d/m/Y') : '—' }}</td>
+                    <td class="text-center">{{ $sale->date_depot_revendeur ? $sale->date_depot_revendeur->format('H:i') : '—' }}</td>
                     <td><strong>{{ $sale->reseller->name ?? '—' }}</strong></td>
                     <td>{{ $sale->product->productModel->name }}</td>
                     <td>{{ $sale->product->imei ?: $sale->product->serial_number }}</td>
                     <td class="text-right"><strong>{{ number_format($sale->prix_vente, 0, ',', ' ') }}</strong></td>
                     <td class="text-center">
                         @if($sale->payment_status->value === 'paid')
-                            <span class="badge badge-success">Payé</span>
+                            <span class="badge badge-success">Paye</span>
                         @else
                             <span class="badge badge-danger">{{ number_format($sale->amount_remaining, 0, ',', ' ') }}</span>
                         @endif
@@ -385,7 +417,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="empty">Aucune sortie</td>
+                    <td colspan="7" class="empty">Pas de produits donnes aux revendeurs</td>
                 </tr>
             @endforelse
         </tbody>
@@ -393,53 +425,242 @@
 
     <div class="page-break"></div>
 
-    {{-- PAGE 3: STOCKS --}}
+    {{-- PAGE 3: REPARATIONS --}}
     <div class="hero">
-        <div class="hero-title">STOCK</div>
-        <div class="hero-date">{{ now()->format('d/m/Y H:i') }}</div>
+        <div class="hero-title">REPARATIONS</div>
+        <div class="hero-date">Situation actuelle - {{ now()->format('d/m/Y H:i') }}</div>
+    </div>
+
+    <div class="stats">
+        <div class="stat accent-orange">
+            <div class="stat-label">A reparer</div>
+            <div class="stat-value orange">{{ $report['stats']['repairs_awaiting'] }}</div>
+        </div>
+        <div class="stat accent-purple">
+            <div class="stat-label">En cours</div>
+            <div class="stat-value purple">{{ $report['stats']['repairs_in_progress'] }}</div>
+        </div>
+        <div class="stat accent-green">
+            <div class="stat-label">Repares</div>
+            <div class="stat-value green">{{ $report['stats']['repairs_done'] }}</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Produits a reparer</div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 30%">Produit</th>
+                <th style="width: 20%">IMEI</th>
+                <th style="width: 15%">Etat</th>
+                <th style="width: 15%">Ou il est</th>
+                <th style="width: 20%">Prix achat</th>
+            </tr>
+        </thead>
+        <tbody>
+            @php
+                $aReparer = $report['repairs']->where('state.value', 'a_reparer');
+            @endphp
+            @forelse($aReparer as $product)
+                <tr>
+                    <td><strong>{{ $product->productModel->name }}</strong></td>
+                    <td>{{ $product->imei ?: $product->serial_number ?: '—' }}</td>
+                    <td><span class="badge badge-warning">A reparer</span></td>
+                    <td>{{ $product->location->label() }}</td>
+                    <td class="text-right">{{ number_format($product->prix_achat, 0, ',', ' ') }} FCFA</td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5" class="empty">Pas de produits a reparer</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    <div class="section">
+        <div class="section-title">Produits en reparation (chez le reparateur)</div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 30%">Produit</th>
+                <th style="width: 20%">IMEI</th>
+                <th style="width: 15%">Etat</th>
+                <th style="width: 15%">Ou il est</th>
+                <th style="width: 20%">Prix achat</th>
+            </tr>
+        </thead>
+        <tbody>
+            @php
+                $enReparation = $report['repairs']->where('location.value', 'en_reparation');
+            @endphp
+            @forelse($enReparation as $product)
+                <tr>
+                    <td><strong>{{ $product->productModel->name }}</strong></td>
+                    <td>{{ $product->imei ?: $product->serial_number ?: '—' }}</td>
+                    <td><span class="badge badge-purple">En cours</span></td>
+                    <td>Chez reparateur</td>
+                    <td class="text-right">{{ number_format($product->prix_achat, 0, ',', ' ') }} FCFA</td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5" class="empty">Pas de produits chez le reparateur</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    <div class="section">
+        <div class="section-title">Produits repares (prets a vendre)</div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 30%">Produit</th>
+                <th style="width: 20%">IMEI</th>
+                <th style="width: 15%">Etat</th>
+                <th style="width: 15%">Ou il est</th>
+                <th style="width: 20%">Prix vente</th>
+            </tr>
+        </thead>
+        <tbody>
+            @php
+                $repares = $report['repairs']->where('state.value', 'repare')->where('location.value', 'boutique');
+            @endphp
+            @forelse($repares as $product)
+                <tr>
+                    <td><strong>{{ $product->productModel->name }}</strong></td>
+                    <td>{{ $product->imei ?: $product->serial_number ?: '—' }}</td>
+                    <td><span class="badge badge-success">Repare</span></td>
+                    <td>En boutique</td>
+                    <td class="text-right">{{ number_format($product->prix_vente, 0, ',', ' ') }} FCFA</td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5" class="empty">Pas de produits repares</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    {{-- PAGE 4: MOUVEMENTS DE STOCK --}}
+    <div class="hero">
+        <div class="hero-title">MOUVEMENTS</div>
+        <div class="hero-date">Du {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} au {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}</div>
     </div>
 
     <div class="stats">
         <div class="stat">
-            <div class="stat-label">Produits</div>
+            <div class="stat-label">Total mouvements</div>
+            <div class="stat-value">{{ $report['stats']['total_movements'] }}</div>
+        </div>
+        <div class="stat accent-green">
+            <div class="stat-label">Entrees</div>
+            <div class="stat-value green">{{ $report['movements']->filter(fn($m) => $m->isIncrement())->count() }}</div>
+        </div>
+        <div class="stat accent-red">
+            <div class="stat-label">Sorties</div>
+            <div class="stat-value red">{{ $report['movements']->filter(fn($m) => $m->isDecrement())->count() }}</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Tous les mouvements</div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 10%">Date</th>
+                <th style="width: 7%">Heure</th>
+                <th style="width: 15%">Type</th>
+                <th style="width: 25%">Produit</th>
+                <th style="width: 15%">IMEI</th>
+                <th style="width: 13%">Par qui</th>
+                <th style="width: 15%">Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($report['movements'] as $movement)
+                <tr>
+                    <td>{{ $movement->created_at->format('d/m/Y') }}</td>
+                    <td class="text-center">{{ $movement->created_at->format('H:i') }}</td>
+                    <td>
+                        @if($movement->isIncrement())
+                            <span class="badge badge-success">{{ $movement->type->label() }}</span>
+                        @else
+                            <span class="badge badge-danger">{{ $movement->type->label() }}</span>
+                        @endif
+                    </td>
+                    <td><strong>{{ $movement->product->productModel->name ?? '—' }}</strong></td>
+                    <td>{{ $movement->product->imei ?? $movement->product->serial_number ?? '—' }}</td>
+                    <td>{{ $movement->user->name ?? '—' }}</td>
+                    <td>{{ Str::limit($movement->notes ?? $movement->justification ?? '—', 20) }}</td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="7" class="empty">Pas de mouvements pour cette periode</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    {{-- PAGE 5: STOCKS --}}
+    <div class="hero">
+        <div class="hero-title">STOCK</div>
+        <div class="hero-date">Situation actuelle - {{ now()->format('d/m/Y H:i') }}</div>
+    </div>
+
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-label">Produits en stock</div>
             <div class="stat-value">{{ $report['stats']['total_stock_available'] }}</div>
         </div>
         <div class="stat">
-            <div class="stat-label">Valeur</div>
+            <div class="stat-label">Valeur totale</div>
             <div class="stat-value">{{ number_format($report['stats']['total_stock_value'], 0, ',', ' ') }}<span class="stat-suffix">FCFA</span></div>
         </div>
         <div class="stat accent-green">
-            <div class="stat-label">Bénéfice</div>
+            <div class="stat-label">Gains possibles</div>
             <div class="stat-value green">{{ number_format($report['stocks']->sum(fn($p) => $p->prix_vente - $p->prix_achat), 0, ',', ' ') }}<span class="stat-suffix">FCFA</span></div>
         </div>
     </div>
 
     <div class="summary">
         <div class="summary-item">
-            <span class="summary-label">Investissement total</span>
+            <span class="summary-label">Argent investi (prix d'achat)</span>
             <span class="summary-value">{{ number_format($report['stocks']->sum('prix_achat'), 0, ',', ' ') }} FCFA</span>
         </div>
         <div class="summary-item">
-            <span class="summary-label">Valeur de vente</span>
+            <span class="summary-label">Argent attendu (prix de vente)</span>
             <span class="summary-value">{{ number_format($report['stats']['total_stock_value'], 0, ',', ' ') }} FCFA</span>
         </div>
         <div class="summary-item">
-            <span class="summary-label">Bénéfice potentiel</span>
+            <span class="summary-label">Gains attendus</span>
             <span class="summary-value">{{ number_format($report['stocks']->sum(fn($p) => $p->prix_vente - $p->prix_achat), 0, ',', ' ') }} FCFA</span>
         </div>
     </div>
 
     <div class="section">
-        <div class="section-title">Inventaire</div>
+        <div class="section-title">Produits par modele</div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th style="width: 46%">Modèle</th>
-                <th style="width: 13%">Qté</th>
+                <th style="width: 46%">Nom du modele</th>
+                <th style="width: 13%">Combien</th>
                 <th style="width: 20%">Valeur</th>
-                <th style="width: 21%">Bénéfice</th>
+                <th style="width: 21%">Gains</th>
             </tr>
         </thead>
         <tbody>
@@ -462,7 +683,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="4" class="empty">Aucun stock</td>
+                    <td colspan="4" class="empty">Pas de stock</td>
                 </tr>
             @endforelse
         </tbody>

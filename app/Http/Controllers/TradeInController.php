@@ -14,6 +14,20 @@ class TradeInController extends Controller
     ) {}
 
     /**
+     * Liste complète des trocs (historique)
+     */
+    public function index()
+    {
+        $this->authorize('viewAny', TradeIn::class);
+
+        $tradeIns = TradeIn::with(['sale.product.productModel', 'sale.seller', 'productReceived.productModel'])
+            ->latest()
+            ->paginate(20);
+
+        return view('trade-ins.index', compact('tradeIns'));
+    }
+
+    /**
      * Liste des trocs en attente de traitement
      */
     public function pending()

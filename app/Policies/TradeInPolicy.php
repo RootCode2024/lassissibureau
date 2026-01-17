@@ -12,7 +12,7 @@ class TradeInPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole('admin');
+        return $user->isAdmin() || $user->isVendeur();
     }
 
     /**
@@ -20,7 +20,7 @@ class TradeInPolicy
      */
     public function view(User $user, TradeIn $tradeIn): bool
     {
-        return $user->hasRole('admin');
+        return $user->isAdmin() || $user->isVendeur();
     }
 
     /**

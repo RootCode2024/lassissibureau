@@ -45,8 +45,8 @@ class ProductObserver
         // Charger le modèle si nécessaire
         $product->loadMissing('productModel');
 
-        if ($product->productModel && $product->productModel->category) {
-            Cache::forget("conditions_{$product->productModel->category}");
+        if ($product->productModel && $product->productModel->category->value) {
+            Cache::forget("conditions_{$product->productModel->category->value}");
         }
     }
 }

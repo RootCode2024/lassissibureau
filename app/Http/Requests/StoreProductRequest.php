@@ -38,7 +38,7 @@ class StoreProductRequest extends FormRequest
                     if ($this->product_model_id) {
                         $model = ProductModel::find($this->product_model_id);
 
-                        return $model && $model->category === 'telephone';
+                        return $model && $model->category->value === 'telephone';
                     }
 
                     return false;

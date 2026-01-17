@@ -37,7 +37,7 @@ class StoreSaleRequest extends FormRequest
             // Paiement (pour revendeurs)
             'payment_status' => ['nullable', 'required_with:reseller_id', 'in:unpaid,partial,paid'],
             'amount_paid' => ['nullable', 'numeric', 'min:0', 'lte:prix_vente'],
-            'payment_due_date' => ['nullable', 'required_with:reseller_id', 'date', 'after_or_equal:today'],
+            'payment_due_date' => ['nullable', 'required_if:payment_status,unpaid,partial', 'date', 'after_or_equal:today'],
             'payment_method' => ['nullable', 'string', 'in:cash,mobile_money,bank_transfer,check'],
 
             // Dates
