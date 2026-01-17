@@ -92,7 +92,7 @@ class CustomerReturn extends Model
      */
     public function isRefund(): bool
     {
-        return !$this->is_exchange;
+        return ! $this->is_exchange;
     }
 
     /**
@@ -100,7 +100,7 @@ class CustomerReturn extends Model
      */
     public function getPriceDifferenceAttribute(): ?float
     {
-        if (!$this->is_exchange || !$this->exchangeProduct) {
+        if (! $this->is_exchange || ! $this->exchangeProduct) {
             return null;
         }
 

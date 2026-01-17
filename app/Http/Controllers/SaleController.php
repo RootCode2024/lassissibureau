@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Sale;
+use App\Http\Requests\RecordPaymentRequest;
 use App\Models\Product;
 use App\Models\Reseller;
-use Illuminate\Http\Request;
+use App\Models\Sale;
 use App\Services\SaleService;
-use Illuminate\Support\Facades\Log;
-use App\Http\Requests\StoreSaleRequest;
-use App\Http\Requests\RecordPaymentRequest;
+use Illuminate\Http\Request;
 
 class SaleController extends Controller
 {
@@ -19,6 +17,7 @@ class SaleController extends Controller
 
     /**
      * Display a listing of the resource.
+     * ✅ Vendeurs peuvent voir TOUTES les ventes (pour les retours clients)
      */
     public function index(Request $request)
     {
@@ -26,11 +25,9 @@ class SaleController extends Controller
 
         $query = Sale::with(['product.productModel', 'seller', 'reseller']);
 
-        // Filtrer selon le rôle
-        if ($request->user()->hasRole('vendeur')) {
-            $query->where('sold_by', $request->user()->id);
-        }
-
+        // ✅ SUPPRIMÉ le filtre par vendeur - tous voient toutes les ventes
+        // Les vendeurs ont besoin de voir toutes les ventes pour gérer les retours clients
+        
         // Filtres
         if ($request->filled('date_from')) {
             $query->where('date_vente_effective', '>=', $request->date_from);
@@ -52,7 +49,10 @@ class SaleController extends Controller
 
         // Statistiques
         $statsQuery = Sale::confirmed();
-        if ($request->user()->hasRole('vendeur')) {
+        
+        // ✅ Pour les stats, on filtre par vendeur
+        // Mais pour la liste des ventes, on montre tout
+        if ($request->user()->isVendeur()) {
             $statsQuery->where('sold_by', $request->user()->id);
         }
 
@@ -61,18 +61,15 @@ class SaleController extends Controller
             'month' => (clone $statsQuery)->thisMonth()->count(),
         ];
 
-        // Stats admin uniquement
-        if ($request->user()->hasRole('admin')) {
+        // Stats admin uniquement (bénéfices masqués pour vendeurs)
+        if ($request->user()->isAdmin()) {
             $monthSales = (clone $statsQuery)->thisMonth()->get();
             $stats['revenue'] = $monthSales->sum('prix_vente');
-            $stats['profit'] = $monthSales->sum(fn($sale) => $sale->benefice);
+            $stats['profit'] = $monthSales->sum(fn ($sale) => $sale->benefice);
         }
 
         return view('sales.index', compact('sales', 'stats'));
     }
-
-    // NOTE: Les méthodes create() et store() ont été supprimées car remplacées par le composant Livewire CreateSale
-
 
     /**
      * Display the specified resource.
@@ -87,7 +84,7 @@ class SaleController extends Controller
             'reseller',
             'tradeIn.productReceived.productModel',
             'customerReturn',
-            'payments.recorder'
+            'payments.recorder',
         ]);
 
         return view('sales.show', compact('sale'));
@@ -108,7 +105,7 @@ class SaleController extends Controller
 
         $request->validate([
             'notes' => ['nullable', 'string', 'max:500'],
-            'payment_amount' => ['nullable', 'numeric', 'min:0', 'max:' . $sale->amount_remaining],
+            'payment_amount' => ['nullable', 'numeric', 'min:0', 'max:'.$sale->amount_remaining],
             'payment_method' => ['nullable', 'string', 'in:cash,mobile_money,bank_transfer,check'],
         ]);
 
@@ -130,7 +127,7 @@ class SaleController extends Controller
         } catch (\Exception $e) {
             return redirect()
                 ->back()
-                ->with('error', 'Erreur lors de la confirmation : ' . $e->getMessage());
+                ->with('error', 'Erreur lors de la confirmation : '.$e->getMessage());
         }
     }
 
@@ -157,7 +154,7 @@ class SaleController extends Controller
         } catch (\Exception $e) {
             return redirect()
                 ->back()
-                ->with('error', 'Erreur lors du retour : ' . $e->getMessage());
+                ->with('error', 'Erreur lors du retour : '.$e->getMessage());
         }
     }
 
@@ -186,18 +183,18 @@ class SaleController extends Controller
 
             return redirect()
                 ->route('sales.show', $sale)
-                ->with('success', 'Paiement de ' . number_format($request->amount, 0, ',', ' ') . ' FCFA enregistré avec succès.');
+                ->with('success', 'Paiement de '.number_format($request->amount, 0, ',', ' ').' FCFA enregistré avec succès.');
         } catch (\Exception $e) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Erreur : ' . $e->getMessage(),
+                    'message' => 'Erreur : '.$e->getMessage(),
                 ], 422);
             }
 
             return redirect()
                 ->back()
-                ->with('error', 'Erreur : ' . $e->getMessage());
+                ->with('error', 'Erreur : '.$e->getMessage());
         }
     }
 
@@ -233,7 +230,7 @@ class SaleController extends Controller
         } catch (\Exception $e) {
             return redirect()
                 ->back()
-                ->with('error', 'Erreur lors de la suppression : ' . $e->getMessage());
+                ->with('error', 'Erreur lors de la suppression : '.$e->getMessage());
         }
     }
 }

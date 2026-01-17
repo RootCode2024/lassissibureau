@@ -2,13 +2,12 @@
 
 namespace App\Services;
 
-use App\Enums\ProductState;
 use App\Enums\ProductLocation;
+use App\Enums\ProductState;
 use App\Models\Product;
 use App\Models\ProductModel;
 use App\Models\Reseller;
 use App\Models\Sale;
-use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
 
 class ReportService
@@ -24,31 +23,25 @@ class ReportService
      */
     public function getDailyReport($date, ?int $userId = null): array
     {
-        $startDate = $date . ' 00:00:00';
-        $endDate = $date . ' 23:59:59';
+        $startDate = $date.' 00:00:00';
+        $endDate = $date.' 23:59:59';
 
-        // Récupérer les ventes complètes
-        $salesQuery = Sale::with(['product.productModel', 'seller', 'reseller', 'tradeIn'])
+        // ✅ Pas de filtrage par userId
+        $sales = Sale::with(['product.productModel', 'seller', 'reseller', 'tradeIn'])
             ->confirmed()
-            ->whereBetween('date_vente_effective', [$startDate, $endDate]);
-
-        if ($userId) {
-            $salesQuery->where('sold_by', $userId);
-        }
-
-        $sales = $salesQuery->get();
+            ->whereBetween('date_vente_effective', [$startDate, $endDate])
+            ->get();
 
         // Calculer les statistiques
         return [
             'date' => $date,
-            'sales' => $sales, // Collection de modèles Sale complets
+            'sales' => $sales,
             'sales_count' => $sales->count(),
             'revenue' => $sales->sum('prix_vente'),
             'profit' => $sales->sum('benefice'),
             'payments_received' => $sales->sum('amount_paid'),
             'average_sale' => $sales->count() > 0 ? $sales->avg('prix_vente') : 0,
             'average_profit' => $sales->count() > 0 ? $sales->avg('benefice') : 0,
-            // Statistiques par type
             'by_type' => $sales->groupBy('sale_type')->map(function ($group) {
                 return [
                     'count' => $group->count(),
@@ -56,7 +49,6 @@ class ReportService
                     'profit' => $group->sum('benefice'),
                 ];
             }),
-            // Statistiques par vendeur
             'by_seller' => $sales->groupBy('sold_by')->map(function ($group) {
                 return [
                     'seller' => $group->first()->seller->name ?? 'N/A',
@@ -65,7 +57,6 @@ class ReportService
                     'profit' => $group->sum('benefice'),
                 ];
             })->values(),
-            // Mouvements de stock du jour
             'movements' => $this->stockService->getMovementStats($startDate, $endDate),
         ];
     }
@@ -115,7 +106,6 @@ class ReportService
         ];
     }
 
-
     /**
      * Rapport hebdomadaire.
      */
@@ -123,9 +113,9 @@ class ReportService
     {
         return [
             'period' => ['start' => $startDate, 'end' => $endDate],
-            'sales' => $this->saleService->getSalesStats($startDate, $endDate, $userId),
+            'sales' => $this->saleService->getSalesStats($startDate, $endDate),
             'movements' => $this->stockService->getMovementStats($startDate, $endDate),
-            'daily_breakdown' => $this->getDailyBreakdown($startDate, $endDate, $userId),
+            'daily_breakdown' => $this->getDailyBreakdown($startDate, $endDate),
         ];
     }
 
@@ -140,9 +130,9 @@ class ReportService
         return [
             'year' => $year,
             'month' => $month,
-            'sales' => $this->saleService->getSalesStats($startDate, $endDate, $userId),
+            'sales' => $this->saleService->getSalesStats($startDate, $endDate),
             'movements' => $this->stockService->getMovementStats($startDate, $endDate),
-            'daily_breakdown' => $this->getDailyBreakdown($startDate, $endDate, $userId),
+            'daily_breakdown' => $this->getDailyBreakdown($startDate, $endDate),
         ];
     }
 
@@ -177,7 +167,7 @@ class ReportService
             'products_chez_revendeur' => Product::where('location', ProductLocation::CHEZ_REVENDEUR->value)->count(),
             'products_en_reparation' => Product::where('location', ProductLocation::EN_REPARATION->value)->count(),
             'products_a_reparer' => Product::where('state', ProductState::A_REPARER->value)->count(),
-            'low_stock_models' => $productModels->filter(fn($m) => $m->isLowStock()),
+            'low_stock_models' => $productModels->filter(fn ($m) => $m->isLowStock()),
             'by_category' => $this->getProductsByCategory(),
             'by_state' => $this->getProductsByState(),
             'by_location' => $this->getProductsByLocation(),
@@ -202,7 +192,7 @@ class ReportService
                     'total_sales' => $reseller->total_sales,
                     'total_benefice' => $reseller->total_benefice,
                     'products_count' => Product::where('location', ProductLocation::CHEZ_REVENDEUR->value)
-                        ->whereHas('currentSale', fn($q) => $q->where('reseller_id', $reseller->id))
+                        ->whereHas('currentSale', fn ($q) => $q->where('reseller_id', $reseller->id))
                         ->count(),
                 ];
 
@@ -226,13 +216,13 @@ class ReportService
         return [
             'total_value_cost' => $products->sum('prix_achat'),
             'total_value_sale' => $products->sum('prix_vente'),
-            'potential_profit' => $products->sum(fn($p) => $p->benefice_potentiel),
+            'potential_profit' => $products->sum(fn ($p) => $p->benefice_potentiel),
             'by_state' => $products->groupBy('state')->map(function ($group) {
                 return [
                     'count' => $group->count(),
                     'total_cost' => $group->sum('prix_achat'),
                     'total_sale_value' => $group->sum('prix_vente'),
-                    'potential_profit' => $group->sum(fn($p) => $p->benefice_potentiel),
+                    'potential_profit' => $group->sum(fn ($p) => $p->benefice_potentiel),
                 ];
             }),
             'by_location' => $products->groupBy('location')->map(function ($group) {
@@ -240,7 +230,7 @@ class ReportService
                     'count' => $group->count(),
                     'total_cost' => $group->sum('prix_achat'),
                     'total_sale_value' => $group->sum('prix_vente'),
-                    'potential_profit' => $group->sum(fn($p) => $p->benefice_potentiel),
+                    'potential_profit' => $group->sum(fn ($p) => $p->benefice_potentiel),
                 ];
             }),
             'by_model' => $this->getInventoryByModel(),
@@ -286,9 +276,8 @@ class ReportService
     {
         $sales = Sale::confirmed()
             ->betweenDates($startDate, $endDate)
-            ->when($userId, fn($q) => $q->where('sold_by', $userId))
             ->get()
-            ->groupBy(fn($sale) => $sale->date_vente_effective->format('Y-m-d'));
+            ->groupBy(fn ($sale) => $sale->date_vente_effective->format('Y-m-d'));
 
         $breakdown = [];
         $current = new \DateTime($startDate);
@@ -327,7 +316,7 @@ class ReportService
             'a_reparer' => Product::where('state', ProductState::A_REPARER->value)->count(),
             'en_reparation' => Product::where('location', ProductLocation::EN_REPARATION->value)->count(),
             'repare' => Product::where('state', ProductState::REPARE->value)->count(),
-            'low_stock_count' => ProductModel::all()->filter(fn($m) => $m->isLowStock())->count(),
+            'low_stock_count' => ProductModel::all()->filter(fn ($m) => $m->isLowStock())->count(),
         ];
     }
 
@@ -380,6 +369,7 @@ class ReportService
             ->get()
             ->mapWithKeys(function ($item) {
                 $state = ProductState::from($item->state);
+
                 return [$state->label() => $item->count];
             })
             ->toArray();
@@ -395,6 +385,7 @@ class ReportService
             ->get()
             ->mapWithKeys(function ($item) {
                 $location = ProductLocation::from($item->location);
+
                 return [$location->label() => $item->count];
             })
             ->toArray();

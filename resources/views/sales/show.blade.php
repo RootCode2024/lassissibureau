@@ -113,7 +113,7 @@
                     <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                         @php
                             $categoryIcons = ['telephone' => 'smartphone', 'tablette' => 'tablet', 'pc' => 'monitor', 'accessoire' => 'box'];
-                            $icon = $categoryIcons[$sale->product->productModel->category] ?? 'box';
+                            $icon = $categoryIcons[$sale->product->productModel->category->value] ?? 'box';
                         @endphp
                         <i data-lucide="{{ $icon }}" class="w-8 h-8 text-gray-600"></i>
                     </div>

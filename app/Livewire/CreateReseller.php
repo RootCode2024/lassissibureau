@@ -8,9 +8,13 @@ use Livewire\Component;
 class CreateReseller extends Component
 {
     public $name = '';
+
     public $phone = '';
+
     public $address = '';
+
     public $notes = '';
+
     public $is_active = true;
 
     protected $rules = [
@@ -40,13 +44,14 @@ class CreateReseller extends Component
             ]);
 
             session()->flash('success', 'Revendeur créé avec succès.');
+
             return redirect()->route('resellers.show', $reseller);
         } catch (\Exception $e) {
             logger()->error('Erreur lors de la création du revendeur', [
                 'error' => $e->getMessage(),
             ]);
 
-            session()->flash('error', 'Erreur lors de la création : ' . $e->getMessage());
+            session()->flash('error', 'Erreur lors de la création : '.$e->getMessage());
         }
     }
 
@@ -55,4 +60,3 @@ class CreateReseller extends Component
         return view('livewire.create-reseller');
     }
 }
-

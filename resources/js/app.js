@@ -13,6 +13,11 @@ document.addEventListener("livewire:init", () => {
     });
 });
 
+// Réinitialiser après la navigation Livewire (SPA mode)
+document.addEventListener("livewire:navigated", () => {
+    createIcons({ icons });
+});
+
 // Export global pour utilisation dans les scripts inline
 window.refreshLucideIcons = () => {
     createIcons({ icons });

@@ -11,7 +11,5 @@ class TradeInCreated
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public function __construct(public TradeIn $tradeIn)
-    {
-    }
+    public function __construct(public TradeIn $tradeIn) {}
 }

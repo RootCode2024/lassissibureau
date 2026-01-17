@@ -9,6 +9,7 @@ class SalePolicy
 {
     /**
      * Determine whether the user can view any models.
+     * ✅ Vendeurs peuvent voir toutes les ventes (pour gérer les retours)
      */
     public function viewAny(User $user): bool
     {
@@ -17,14 +18,12 @@ class SalePolicy
 
     /**
      * Determine whether the user can view the model.
+     * ✅ Vendeurs peuvent voir n'importe quelle vente (pour les retours clients)
      */
     public function view(User $user, Sale $sale): bool
     {
-        // Les vendeurs peuvent voir leurs propres ventes
-        if ($user->isVendeur() && $sale->sold_by === $user->id) {
-            return true;
-        }
-
+        // Tous les vendeurs et admins peuvent voir toutes les ventes
+        // Nécessaire pour gérer les retours clients
         return $user->can('sales.view');
     }
 
@@ -81,7 +80,7 @@ class SalePolicy
      */
     public function forceDelete(User $user, Sale $sale): bool
     {
-        return $user->isAdmin() && !$sale->is_confirmed;
+        return $user->isAdmin() && ! $sale->is_confirmed;
     }
 
     /**
@@ -90,25 +89,21 @@ class SalePolicy
     public function confirm(User $user, Sale $sale): bool
     {
         // Seul l'admin peut confirmer les ventes revendeurs
-        if (!$user->isAdmin()) {
+        if (! $user->isAdmin()) {
             return false;
         }
 
         // La vente doit être via un revendeur et non confirmée
-        return $sale->reseller_id !== null && !$sale->is_confirmed;
+        return $sale->reseller_id !== null && ! $sale->is_confirmed;
     }
 
     /**
-     * Determine whether the user can view sale details (including profit).
+     * Determine whether the user can view sale profit.
+     * ✅ NOUVEAU: Seul l'admin peut voir les bénéfices
      */
     public function viewProfit(User $user, Sale $sale): bool
     {
-        // Les vendeurs peuvent voir le profit de leurs propres ventes
-        if ($user->isVendeur() && $sale->sold_by === $user->id) {
-            return true;
-        }
-
-        return $user->can('reports.view');
+        return $user->isAdmin();
     }
 
     /**
@@ -116,7 +111,7 @@ class SalePolicy
      */
     public function export(User $user): bool
     {
-        return $user->can('reports.export');
+        return $user->isAdmin();
     }
 
     /**
@@ -125,10 +120,26 @@ class SalePolicy
     public function processReturn(User $user, Sale $sale): bool
     {
         // La vente doit être confirmée
-        if (!$sale->is_confirmed) {
+        if (! $sale->is_confirmed) {
             return false;
         }
 
         return $user->can('returns.manage');
+    }
+
+    /**
+     * Determine whether the user can return from reseller.
+     */
+    public function returnFromReseller(User $user, Sale $sale): bool
+    {
+        return $user->isAdmin();
+    }
+
+    /**
+     * Determine whether the user can view pending sales.
+     */
+    public function viewPending(User $user): bool
+    {
+        return $user->isAdmin();
     }
 }

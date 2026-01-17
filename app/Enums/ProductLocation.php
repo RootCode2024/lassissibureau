@@ -79,7 +79,7 @@ enum ProductLocation: string
      */
     public function isOutside(): bool
     {
-        return !$this->isInStock();
+        return ! $this->isInStock();
     }
 
     /**
@@ -88,7 +88,7 @@ enum ProductLocation: string
     public static function options(): array
     {
         return array_map(
-            fn(self $location) => [
+            fn (self $location) => [
                 'value' => $location->value,
                 'label' => $location->label(),
                 'icon' => $location->icon(),

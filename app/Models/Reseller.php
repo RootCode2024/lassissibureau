@@ -11,7 +11,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Reseller extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -84,7 +84,7 @@ class Reseller extends Model
     {
         return (float) $this->confirmedSales()
             ->get()
-            ->sum(fn($sale) => $sale->benefice);
+            ->sum(fn ($sale) => $sale->benefice);
     }
 
     /**
@@ -164,6 +164,6 @@ class Reseller extends Model
         return (float) $this->confirmedSales()
             ->whereBetween('date_vente_effective', [$startDate, $endDate])
             ->get()
-            ->sum(fn($sale) => $sale->benefice);
+            ->sum(fn ($sale) => $sale->benefice);
     }
 }

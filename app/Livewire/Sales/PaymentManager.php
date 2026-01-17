@@ -2,21 +2,25 @@
 
 namespace App\Livewire\Sales;
 
+use App\Events\PaymentRecorded;
 use App\Models\Sale;
 use App\Services\SaleService;
-use App\Events\PaymentRecorded;
-use Livewire\Component;
 use Livewire\Attributes\On;
+use Livewire\Component;
 
 class PaymentManager extends Component
 {
     public Sale $sale;
+
     public $showModal = false;
 
     // Champs du formulaire
     public $amount = null;
+
     public $payment_method = 'cash';
+
     public $payment_date;
+
     public $notes = null;
 
     public function mount(Sale $sale)
@@ -52,7 +56,7 @@ class PaymentManager extends Component
                 'required',
                 'numeric',
                 'min:0.01',
-                'max:' . $this->sale->amount_remaining,
+                'max:'.$this->sale->amount_remaining,
             ],
             'payment_method' => 'required|in:cash,mobile_money,bank_transfer,check',
             'payment_date' => 'required|date|before_or_equal:today',
@@ -60,7 +64,7 @@ class PaymentManager extends Component
         ], [
             'amount.required' => 'Le montant est requis.',
             'amount.min' => 'Le montant doit être supérieur à 0.',
-            'amount.max' => 'Le montant ne peut pas dépasser le solde restant (' . number_format($this->sale->amount_remaining, 0, ',', ' ') . ' FCFA).',
+            'amount.max' => 'Le montant ne peut pas dépasser le solde restant ('.number_format($this->sale->amount_remaining, 0, ',', ' ').' FCFA).',
             'payment_method.required' => 'La méthode de paiement est requise.',
             'payment_date.required' => 'La date du paiement est requise.',
             'payment_date.before_or_equal' => 'La date ne peut pas être dans le futur.',
@@ -82,14 +86,14 @@ class PaymentManager extends Component
 
             // Notification de succès
             $this->dispatch('payment-recorded', [
-                'message' => 'Paiement de ' . number_format($this->amount, 0, ',', ' ') . ' FCFA enregistré avec succès.',
+                'message' => 'Paiement de '.number_format($this->amount, 0, ',', ' ').' FCFA enregistré avec succès.',
             ]);
 
             session()->flash('success', 'Paiement enregistré avec succès.');
 
             $this->closeModal();
         } catch (\Exception $e) {
-            session()->flash('error', 'Erreur : ' . $e->getMessage());
+            session()->flash('error', 'Erreur : '.$e->getMessage());
         }
     }
 

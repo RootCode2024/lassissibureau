@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\StockMovementType;
-use App\Enums\ProductState;
 use App\Enums\ProductLocation;
+use App\Enums\ProductState;
+use App\Enums\StockMovementType;
 use App\Models\Product;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -19,7 +19,7 @@ class StoreStockMovementRequest extends FormRequest
         // Vérifier les permissions selon le type de mouvement
         $type = StockMovementType::tryFrom($this->type);
 
-        if (!$type) {
+        if (! $type) {
             return false;
         }
 
@@ -67,7 +67,7 @@ class StoreStockMovementRequest extends FormRequest
 
             // Relations optionnelles
             'sale_id' => [
-                Rule::requiredIf(fn() => $type && in_array($type, [
+                Rule::requiredIf(fn () => $type && in_array($type, [
                     StockMovementType::VENTE_DIRECTE,
                     StockMovementType::VENTE_TROC,
                 ])),
@@ -77,7 +77,7 @@ class StoreStockMovementRequest extends FormRequest
             ],
 
             'reseller_id' => [
-                Rule::requiredIf(fn() => $type && $type->requiresResellerInfo()),
+                Rule::requiredIf(fn () => $type && $type->requiresResellerInfo()),
                 'nullable',
                 'integer',
                 'exists:resellers,id',
@@ -92,7 +92,7 @@ class StoreStockMovementRequest extends FormRequest
 
             // Justification
             'justification' => [
-                Rule::requiredIf(fn() => $type && $type->requiresJustification()),
+                Rule::requiredIf(fn () => $type && $type->requiresJustification()),
                 'nullable',
                 'string',
                 'min:10',
@@ -205,7 +205,7 @@ class StoreStockMovementRequest extends FormRequest
     {
         // Ne pas vendre un produit qui n'est pas disponible
         if (in_array($type, [StockMovementType::VENTE_DIRECTE, StockMovementType::VENTE_TROC])) {
-            if (!$product->isAvailable()) {
+            if (! $product->isAvailable()) {
                 $validator->errors()->add(
                     'product_id',
                     sprintf(
@@ -269,7 +269,7 @@ class StoreStockMovementRequest extends FormRequest
         $stateAfter = $this->input('state_after');
         $locationAfter = $this->input('location_after');
 
-        if (!$stateAfter || !$locationAfter) {
+        if (! $stateAfter || ! $locationAfter) {
             return;
         }
 
@@ -282,7 +282,7 @@ class StoreStockMovementRequest extends FormRequest
                     ProductLocation::EN_REPARATION->value,
                     ProductLocation::FOURNISSEUR->value,
                 ],
-                'message' => 'Un produit vendu doit être chez le client ou chez un revendeur (vente non confirmée).'
+                'message' => 'Un produit vendu doit être chez le client ou chez un revendeur (vente non confirmée).',
             ],
             // Un produit à réparer ne peut pas être chez le client
             [
@@ -291,7 +291,7 @@ class StoreStockMovementRequest extends FormRequest
                     ProductLocation::CHEZ_CLIENT->value,
                     ProductLocation::FOURNISSEUR->value,
                 ],
-                'message' => 'Un produit à réparer doit être en boutique ou en réparation.'
+                'message' => 'Un produit à réparer doit être en boutique ou en réparation.',
             ],
             // Un produit disponible ne peut pas être chez le client
             [
@@ -299,7 +299,7 @@ class StoreStockMovementRequest extends FormRequest
                 'invalid_locations' => [
                     ProductLocation::CHEZ_CLIENT->value,
                 ],
-                'message' => 'Un produit disponible ne peut pas être chez le client.'
+                'message' => 'Un produit disponible ne peut pas être chez le client.',
             ],
         ];
 

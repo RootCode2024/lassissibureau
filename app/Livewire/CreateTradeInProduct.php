@@ -2,8 +2,8 @@
 
 namespace App\Livewire;
 
-use App\Models\TradeIn;
 use App\Models\ProductModel;
+use App\Models\TradeIn;
 use App\Services\SaleService;
 use Livewire\Component;
 
@@ -12,8 +12,11 @@ class CreateTradeInProduct extends Component
     public TradeIn $tradeIn;
 
     public $product_model_id = '';
+
     public $prix_vente = '';
+
     public $marge_percentage = 20;
+
     public $notes = '';
 
     // Flag pour éviter les boucles infinies lors des mises à jour
@@ -38,7 +41,7 @@ class CreateTradeInProduct extends Component
         $this->prix_vente = round($tradeIn->valeur_reprise * 1.2, 2);
 
         // Pré-remplir les notes
-        $this->notes = 'Reçu en troc - Vente #' . $tradeIn->sale_id;
+        $this->notes = 'Reçu en troc - Vente #'.$tradeIn->sale_id;
     }
 
     /**
@@ -56,7 +59,7 @@ class CreateTradeInProduct extends Component
         try {
             if ($value !== '' && $value !== null && is_numeric($value)) {
                 $marge = floatval($value);
-                
+
                 // Calculer le nouveau prix de vente basé sur la marge
                 $this->prix_vente = round($this->tradeIn->valeur_reprise * (1 + $marge / 100), 2);
             }
@@ -81,7 +84,7 @@ class CreateTradeInProduct extends Component
             if ($value !== '' && $value !== null && is_numeric($value)) {
                 $prixVente = floatval($value);
                 $valeurReprise = $this->tradeIn->valeur_reprise;
-                
+
                 // Éviter la division par zéro
                 if ($valeurReprise > 0) {
                     // Calculer la nouvelle marge en pourcentage
@@ -110,6 +113,7 @@ class CreateTradeInProduct extends Component
             );
 
             session()->flash('success', 'Produit reçu en troc créé avec succès.');
+
             return redirect()->route('products.show', $product);
         } catch (\Exception $e) {
             logger()->error('Erreur création produit troc', [
@@ -117,7 +121,7 @@ class CreateTradeInProduct extends Component
                 'trade_in_id' => $this->tradeIn->id,
             ]);
 
-            session()->flash('error', 'Erreur : ' . $e->getMessage());
+            session()->flash('error', 'Erreur : '.$e->getMessage());
         }
     }
 

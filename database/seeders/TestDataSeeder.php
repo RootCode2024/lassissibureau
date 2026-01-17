@@ -2,12 +2,16 @@
 
 namespace Database\Seeders;
 
-use App\Models\Product;
-use App\Models\Reseller;
-use App\Enums\ProductState;
-use App\Models\ProductModel;
+use App\Enums\ProductCategory;
 use App\Enums\ProductLocation;
+use App\Enums\ProductState;
+use App\Enums\StockMovementType;
+use App\Models\Product;
+use App\Models\ProductModel;
+use App\Models\Reseller;
+use App\Models\StockMovement;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class TestDataSeeder extends Seeder
 {
@@ -18,1277 +22,23 @@ class TestDataSeeder extends Seeder
     {
         $this->command->info('🔄 Création des données de test...');
 
-        // Créer des modèles de produits
-        $productModels = [
-            // iPhones - Série 7
-            [
-                'name' => 'iPhone 7 32GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 80000,
-                'prix_vente_default' => 110000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 7 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 90000,
-                'prix_vente_default' => 120000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 7 Plus 32GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 100000,
-                'prix_vente_default' => 135000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 7 Plus 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 110000,
-                'prix_vente_default' => 145000,
-                'stock_minimum' => 2,
-            ],
+        DB::transaction(function () {
+            // Créer des revendeurs d'abord
+            $this->createResellers();
+            
+            // Créer les modèles de produits
+            $this->createProductModels();
+            
+            $this->command->info('');
+            $this->command->info('🎉 Données de test créées avec succès!');
+        });
+    }
 
-            // iPhones - Série 8
-            [
-                'name' => 'iPhone 8 64GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 120000,
-                'prix_vente_default' => 160000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 8 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 130000,
-                'prix_vente_default' => 170000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 8 Plus 64GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 140000,
-                'prix_vente_default' => 185000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 8 Plus 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 150000,
-                'prix_vente_default' => 195000,
-                'stock_minimum' => 2,
-            ],
-
-            // iPhones - Série X
-            [
-                'name' => 'iPhone X 64GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 180000,
-                'prix_vente_default' => 240000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone X 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 200000,
-                'prix_vente_default' => 260000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone XR 64GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 170000,
-                'prix_vente_default' => 230000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'iPhone XR 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 180000,
-                'prix_vente_default' => 240000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'iPhone XS 64GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 200000,
-                'prix_vente_default' => 270000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone XS 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 220000,
-                'prix_vente_default' => 290000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone XS Max 64GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 230000,
-                'prix_vente_default' => 310000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone XS Max 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 250000,
-                'prix_vente_default' => 330000,
-                'stock_minimum' => 2,
-            ],
-
-            // iPhones - Série 11
-            [
-                'name' => 'iPhone 11 64GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 250000,
-                'prix_vente_default' => 320000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'iPhone 11 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 270000,
-                'prix_vente_default' => 340000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'iPhone 11 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 290000,
-                'prix_vente_default' => 360000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 11 Pro 64GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 320000,
-                'prix_vente_default' => 410000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 11 Pro 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 350000,
-                'prix_vente_default' => 440000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 11 Pro Max 64GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 350000,
-                'prix_vente_default' => 450000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 11 Pro Max 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 380000,
-                'prix_vente_default' => 480000,
-                'stock_minimum' => 2,
-            ],
-
-            // iPhones - Série 12
-            [
-                'name' => 'iPhone 12 Mini 64GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 280000,
-                'prix_vente_default' => 360000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 12 Mini 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 300000,
-                'prix_vente_default' => 380000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 12 64GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 330000,
-                'prix_vente_default' => 430000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'iPhone 12 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 350000,
-                'prix_vente_default' => 450000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'iPhone 12 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 380000,
-                'prix_vente_default' => 480000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 12 Pro 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 420000,
-                'prix_vente_default' => 540000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 12 Pro 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 450000,
-                'prix_vente_default' => 570000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 12 Pro Max 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 470000,
-                'prix_vente_default' => 600000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 12 Pro Max 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 500000,
-                'prix_vente_default' => 630000,
-                'stock_minimum' => 2,
-            ],
-
-            // iPhones - Série 13
-            [
-                'name' => 'iPhone 13 Mini 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 350000,
-                'prix_vente_default' => 450000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 13 Mini 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 380000,
-                'prix_vente_default' => 480000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 13 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 400000,
-                'prix_vente_default' => 520000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'iPhone 13 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 430000,
-                'prix_vente_default' => 550000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'iPhone 13 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 480000,
-                'prix_vente_default' => 600000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 13 Pro 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 480000,
-                'prix_vente_default' => 620000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 13 Pro 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 520000,
-                'prix_vente_default' => 660000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 13 Pro 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 570000,
-                'prix_vente_default' => 710000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 13 Pro Max 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 520000,
-                'prix_vente_default' => 670000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 13 Pro Max 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 500000,
-                'prix_vente_default' => 650000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 13 Pro Max 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 600000,
-                'prix_vente_default' => 750000,
-                'stock_minimum' => 2,
-            ],
-
-            // iPhones - Série 14
-            [
-                'name' => 'iPhone 14 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 480000,
-                'prix_vente_default' => 620000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'iPhone 14 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 520000,
-                'prix_vente_default' => 660000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'iPhone 14 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 570000,
-                'prix_vente_default' => 710000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 14 Plus 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 530000,
-                'prix_vente_default' => 680000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 14 Plus 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 570000,
-                'prix_vente_default' => 720000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 14 Plus 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 620000,
-                'prix_vente_default' => 770000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 14 Pro 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 600000,
-                'prix_vente_default' => 770000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 14 Pro 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 650000,
-                'prix_vente_default' => 820000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 14 Pro 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 700000,
-                'prix_vente_default' => 870000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 14 Pro 1TB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 780000,
-                'prix_vente_default' => 950000,
-                'stock_minimum' => 1,
-            ],
-            [
-                'name' => 'iPhone 14 Pro Max 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 650000,
-                'prix_vente_default' => 830000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 14 Pro Max 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 700000,
-                'prix_vente_default' => 880000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 14 Pro Max 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 750000,
-                'prix_vente_default' => 930000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 14 Pro Max 1TB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 830000,
-                'prix_vente_default' => 1010000,
-                'stock_minimum' => 1,
-            ],
-
-            // iPhones - Série 15
-            [
-                'name' => 'iPhone 15 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 550000,
-                'prix_vente_default' => 710000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'iPhone 15 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 600000,
-                'prix_vente_default' => 760000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'iPhone 15 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 650000,
-                'prix_vente_default' => 810000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 15 Plus 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 620000,
-                'prix_vente_default' => 790000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 15 Plus 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 670000,
-                'prix_vente_default' => 840000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 15 Plus 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 720000,
-                'prix_vente_default' => 890000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 15 Pro 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 700000,
-                'prix_vente_default' => 890000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 15 Pro 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 750000,
-                'prix_vente_default' => 940000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 15 Pro 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 820000,
-                'prix_vente_default' => 1010000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 15 Pro 1TB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 900000,
-                'prix_vente_default' => 1100000,
-                'stock_minimum' => 1,
-            ],
-            [
-                'name' => 'iPhone 15 Pro Max 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 800000,
-                'prix_vente_default' => 1000000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 15 Pro Max 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 870000,
-                'prix_vente_default' => 1070000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 15 Pro Max 1TB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 950000,
-                'prix_vente_default' => 1150000,
-                'stock_minimum' => 1,
-            ],
-
-            // iPhones - Série 16
-            [
-                'name' => 'iPhone 16 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 650000,
-                'prix_vente_default' => 830000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'iPhone 16 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 700000,
-                'prix_vente_default' => 880000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'iPhone 16 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 750000,
-                'prix_vente_default' => 930000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 16 Plus 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 720000,
-                'prix_vente_default' => 910000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 16 Plus 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 770000,
-                'prix_vente_default' => 960000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 16 Plus 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 820000,
-                'prix_vente_default' => 1010000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 16 Pro 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 800000,
-                'prix_vente_default' => 1010000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 16 Pro 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 850000,
-                'prix_vente_default' => 1060000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 16 Pro 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 920000,
-                'prix_vente_default' => 1130000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 16 Pro 1TB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 1000000,
-                'prix_vente_default' => 1220000,
-                'stock_minimum' => 1,
-            ],
-            [
-                'name' => 'iPhone 16 Pro Max 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 900000,
-                'prix_vente_default' => 1120000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 16 Pro Max 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 970000,
-                'prix_vente_default' => 1190000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 16 Pro Max 1TB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 1050000,
-                'prix_vente_default' => 1270000,
-                'stock_minimum' => 1,
-            ],
-
-            // iPhones - Série 17 (prévisionnel - 2025)
-            [
-                'name' => 'iPhone 17 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 750000,
-                'prix_vente_default' => 950000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'iPhone 17 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 800000,
-                'prix_vente_default' => 1000000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'iPhone 17 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 850000,
-                'prix_vente_default' => 1050000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 17 Plus 128GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 820000,
-                'prix_vente_default' => 1030000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 17 Plus 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 870000,
-                'prix_vente_default' => 1080000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 17 Plus 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 920000,
-                'prix_vente_default' => 1130000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 17 Pro 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 950000,
-                'prix_vente_default' => 1180000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 17 Pro 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 1020000,
-                'prix_vente_default' => 1250000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 17 Pro 1TB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 1100000,
-                'prix_vente_default' => 1340000,
-                'stock_minimum' => 1,
-            ],
-            [
-                'name' => 'iPhone 17 Pro Max 256GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 1000000,
-                'prix_vente_default' => 1240000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 17 Pro Max 512GB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 1070000,
-                'prix_vente_default' => 1310000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPhone 17 Pro Max 1TB',
-                'brand' => 'Apple',
-                'category' => 'telephone',
-                'prix_revient_default' => 1150000,
-                'prix_vente_default' => 1390000,
-                'stock_minimum' => 1,
-            ],
-
-            // SAMSUNG Galaxy S Series
-            [
-                'name' => 'Samsung Galaxy S21 128GB',
-                'brand' => 'Samsung',
-                'category' => 'telephone',
-                'prix_revient_default' => 300000,
-                'prix_vente_default' => 400000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'Samsung Galaxy S21 256GB',
-                'brand' => 'Samsung',
-                'category' => 'telephone',
-                'prix_revient_default' => 330000,
-                'prix_vente_default' => 430000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'Samsung Galaxy S21 Plus 128GB',
-                'brand' => 'Samsung',
-                'category' => 'telephone',
-                'prix_revient_default' => 350000,
-                'prix_vente_default' => 460000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'Samsung Galaxy S21 Ultra 256GB',
-                'brand' => 'Samsung',
-                'category' => 'telephone',
-                'prix_revient_default' => 450000,
-                'prix_vente_default' => 590000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'Samsung Galaxy S22 128GB',
-                'brand' => 'Samsung',
-                'category' => 'telephone',
-                'prix_revient_default' => 380000,
-                'prix_vente_default' => 500000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'Samsung Galaxy S22 256GB',
-                'brand' => 'Samsung',
-                'category' => 'telephone',
-                'prix_revient_default' => 410000,
-                'prix_vente_default' => 530000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'Samsung Galaxy S22 Ultra 256GB',
-                'brand' => 'Samsung',
-                'category' => 'telephone',
-                'prix_revient_default' => 530000,
-                'prix_vente_default' => 690000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'Samsung Galaxy S23 128GB',
-                'brand' => 'Samsung',
-                'category' => 'telephone',
-                'prix_revient_default' => 450000,
-                'prix_vente_default' => 590000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'Samsung Galaxy S23 256GB',
-                'brand' => 'Samsung',
-                'category' => 'telephone',
-                'prix_revient_default' => 480000,
-                'prix_vente_default' => 620000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'Samsung Galaxy S23 Ultra 256GB',
-                'brand' => 'Samsung',
-                'category' => 'telephone',
-                'prix_revient_default' => 600000,
-                'prix_vente_default' => 780000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'Samsung Galaxy S24 128GB',
-                'brand' => 'Samsung',
-                'category' => 'telephone',
-                'prix_revient_default' => 520000,
-                'prix_vente_default' => 680000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'Samsung Galaxy S24 256GB',
-                'brand' => 'Samsung',
-                'category' => 'telephone',
-                'prix_revient_default' => 560000,
-                'prix_vente_default' => 720000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'Samsung Galaxy S24 Ultra 256GB',
-                'brand' => 'Samsung',
-                'category' => 'telephone',
-                'prix_revient_default' => 680000,
-                'prix_vente_default' => 880000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'Samsung Galaxy S24 Ultra 512GB',
-                'brand' => 'Samsung',
-                'category' => 'telephone',
-                'prix_revient_default' => 750000,
-                'prix_vente_default' => 950000,
-                'stock_minimum' => 2,
-            ],
-            // SAMSUNG Galaxy Z (Pliables)
-            [
-                'name' => 'Samsung Galaxy Z Flip 5 256GB',
-                'brand' => 'Samsung',
-                'category' => 'telephone',
-                'prix_revient_default' => 550000,
-                'prix_vente_default' => 720000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'Samsung Galaxy Z Fold 5 256GB',
-                'brand' => 'Samsung',
-                'category' => 'telephone',
-                'prix_revient_default' => 850000,
-                'prix_vente_default' => 1100000,
-                'stock_minimum' => 1,
-            ],
-
-            // iPADS
-            [
-                'name' => 'iPad 9ème génération 64GB WiFi',
-                'brand' => 'Apple',
-                'category' => 'tablette',
-                'prix_revient_default' => 220000,
-                'prix_vente_default' => 290000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPad 10ème génération 64GB WiFi',
-                'brand' => 'Apple',
-                'category' => 'tablette',
-                'prix_revient_default' => 280000,
-                'prix_vente_default' => 370000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPad 10ème génération 256GB WiFi',
-                'brand' => 'Apple',
-                'category' => 'tablette',
-                'prix_revient_default' => 320000,
-                'prix_vente_default' => 410000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPad Air 5ème génération 64GB WiFi',
-                'brand' => 'Apple',
-                'category' => 'tablette',
-                'prix_revient_default' => 380000,
-                'prix_vente_default' => 500000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPad Air 5ème génération 256GB WiFi',
-                'brand' => 'Apple',
-                'category' => 'tablette',
-                'prix_revient_default' => 450000,
-                'prix_vente_default' => 580000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPad Pro 11" M2 128GB WiFi',
-                'brand' => 'Apple',
-                'category' => 'tablette',
-                'prix_revient_default' => 550000,
-                'prix_vente_default' => 720000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPad Pro 11" M2 256GB WiFi',
-                'brand' => 'Apple',
-                'category' => 'tablette',
-                'prix_revient_default' => 600000,
-                'prix_vente_default' => 770000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPad Pro 12.9" M2 256GB WiFi',
-                'brand' => 'Apple',
-                'category' => 'tablette',
-                'prix_revient_default' => 750000,
-                'prix_vente_default' => 970000,
-                'stock_minimum' => 1,
-            ],
-            [
-                'name' => 'iPad Pro 12.9" M2 512GB WiFi',
-                'brand' => 'Apple',
-                'category' => 'tablette',
-                'prix_revient_default' => 850000,
-                'prix_vente_default' => 1070000,
-                'stock_minimum' => 1,
-            ],
-            [
-                'name' => 'iPad Mini 6ème génération 64GB WiFi',
-                'brand' => 'Apple',
-                'category' => 'tablette',
-                'prix_revient_default' => 320000,
-                'prix_vente_default' => 420000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'iPad Mini 6ème génération 256GB WiFi',
-                'brand' => 'Apple',
-                'category' => 'tablette',
-                'prix_revient_default' => 380000,
-                'prix_vente_default' => 490000,
-                'stock_minimum' => 2,
-            ],
-
-            // ACCESSOIRES - Écouteurs et Audio
-            [
-                'name' => 'AirPods 2ème génération',
-                'brand' => 'Apple',
-                'category' => 'accessoire',
-                'prix_revient_default' => 50000,
-                'prix_vente_default' => 70000,
-                'stock_minimum' => 5,
-            ],
-            [
-                'name' => 'AirPods 3ème génération',
-                'brand' => 'Apple',
-                'category' => 'accessoire',
-                'prix_revient_default' => 70000,
-                'prix_vente_default' => 95000,
-                'stock_minimum' => 5,
-            ],
-            [
-                'name' => 'AirPods Pro 2',
-                'brand' => 'Apple',
-                'category' => 'accessoire',
-                'prix_revient_default' => 80000,
-                'prix_vente_default' => 110000,
-                'stock_minimum' => 5,
-            ],
-            [
-                'name' => 'AirPods Max',
-                'brand' => 'Apple',
-                'category' => 'accessoire',
-                'prix_revient_default' => 250000,
-                'prix_vente_default' => 330000,
-                'stock_minimum' => 2,
-            ],
-            [
-                'name' => 'Samsung Galaxy Buds 2',
-                'brand' => 'Samsung',
-                'category' => 'accessoire',
-                'prix_revient_default' => 35000,
-                'prix_vente_default' => 50000,
-                'stock_minimum' => 5,
-            ],
-            [
-                'name' => 'Samsung Galaxy Buds 2 Pro',
-                'brand' => 'Samsung',
-                'category' => 'accessoire',
-                'prix_revient_default' => 55000,
-                'prix_vente_default' => 75000,
-                'stock_minimum' => 5,
-            ],
-
-            // ACCESSOIRES - Chargeurs et Câbles
-            [
-                'name' => 'Chargeur iPhone 20W USB-C',
-                'brand' => 'Apple',
-                'category' => 'accessoire',
-                'prix_revient_default' => 5000,
-                'prix_vente_default' => 8000,
-                'stock_minimum' => 10,
-            ],
-            [
-                'name' => 'Chargeur iPhone 30W USB-C',
-                'brand' => 'Apple',
-                'category' => 'accessoire',
-                'prix_revient_default' => 12000,
-                'prix_vente_default' => 18000,
-                'stock_minimum' => 8,
-            ],
-            [
-                'name' => 'Câble USB-C vers Lightning 1m',
-                'brand' => 'Apple',
-                'category' => 'accessoire',
-                'prix_revient_default' => 4000,
-                'prix_vente_default' => 7000,
-                'stock_minimum' => 15,
-            ],
-            [
-                'name' => 'Câble USB-C vers Lightning 2m',
-                'brand' => 'Apple',
-                'category' => 'accessoire',
-                'prix_revient_default' => 6000,
-                'prix_vente_default' => 9000,
-                'stock_minimum' => 10,
-            ],
-            [
-                'name' => 'Câble USB-C vers USB-C 1m',
-                'brand' => 'Apple',
-                'category' => 'accessoire',
-                'prix_revient_default' => 4000,
-                'prix_vente_default' => 7000,
-                'stock_minimum' => 15,
-            ],
-            [
-                'name' => 'Chargeur sans fil MagSafe',
-                'brand' => 'Apple',
-                'category' => 'accessoire',
-                'prix_revient_default' => 15000,
-                'prix_vente_default' => 22000,
-                'stock_minimum' => 8,
-            ],
-            [
-                'name' => 'Chargeur Samsung 25W USB-C',
-                'brand' => 'Samsung',
-                'category' => 'accessoire',
-                'prix_revient_default' => 4000,
-                'prix_vente_default' => 7000,
-                'stock_minimum' => 10,
-            ],
-            [
-                'name' => 'Chargeur Samsung 45W USB-C',
-                'brand' => 'Samsung',
-                'category' => 'accessoire',
-                'prix_revient_default' => 10000,
-                'prix_vente_default' => 15000,
-                'stock_minimum' => 8,
-            ],
-            [
-                'name' => 'Câble USB-C vers USB-C Samsung 1.5m',
-                'brand' => 'Samsung',
-                'category' => 'accessoire',
-                'prix_revient_default' => 3000,
-                'prix_vente_default' => 5000,
-                'stock_minimum' => 15,
-            ],
-
-            // ACCESSOIRES - Coques et Protection
-            [
-                'name' => 'Coque Silicone iPhone 13/14',
-                'brand' => 'Apple',
-                'category' => 'accessoire',
-                'prix_revient_default' => 8000,
-                'prix_vente_default' => 12000,
-                'stock_minimum' => 10,
-            ],
-            [
-                'name' => 'Coque Silicone iPhone 15/16',
-                'brand' => 'Apple',
-                'category' => 'accessoire',
-                'prix_revient_default' => 9000,
-                'prix_vente_default' => 14000,
-                'stock_minimum' => 10,
-            ],
-            [
-                'name' => 'Coque Transparente iPhone Universelle',
-                'brand' => 'Générique',
-                'category' => 'accessoire',
-                'prix_revient_default' => 2000,
-                'prix_vente_default' => 4000,
-                'stock_minimum' => 20,
-            ],
-            [
-                'name' => 'Protection écran verre trempé iPhone',
-                'brand' => 'Générique',
-                'category' => 'accessoire',
-                'prix_revient_default' => 2000,
-                'prix_vente_default' => 4000,
-                'stock_minimum' => 25,
-            ],
-            [
-                'name' => 'Coque Samsung Galaxy S24',
-                'brand' => 'Samsung',
-                'category' => 'accessoire',
-                'prix_revient_default' => 5000,
-                'prix_vente_default' => 8000,
-                'stock_minimum' => 10,
-            ],
-            [
-                'name' => 'Protection écran verre trempé Samsung',
-                'brand' => 'Générique',
-                'category' => 'accessoire',
-                'prix_revient_default' => 2000,
-                'prix_vente_default' => 4000,
-                'stock_minimum' => 20,
-            ],
-
-            // ACCESSOIRES - Supports et Autres
-            [
-                'name' => 'Support voiture magnétique',
-                'brand' => 'Générique',
-                'category' => 'accessoire',
-                'prix_revient_default' => 3000,
-                'prix_vente_default' => 6000,
-                'stock_minimum' => 10,
-            ],
-            [
-                'name' => 'Batterie externe 10000mAh',
-                'brand' => 'Anker',
-                'category' => 'accessoire',
-                'prix_revient_default' => 12000,
-                'prix_vente_default' => 18000,
-                'stock_minimum' => 8,
-            ],
-            [
-                'name' => 'Batterie externe 20000mAh',
-                'brand' => 'Anker',
-                'category' => 'accessoire',
-                'prix_revient_default' => 18000,
-                'prix_vente_default' => 26000,
-                'stock_minimum' => 5,
-            ],
-            [
-                'name' => 'Apple Pencil 2ème génération',
-                'brand' => 'Apple',
-                'category' => 'accessoire',
-                'prix_revient_default' => 50000,
-                'prix_vente_default' => 70000,
-                'stock_minimum' => 5,
-            ],
-            [
-                'name' => 'Magic Keyboard pour iPad Pro',
-                'brand' => 'Apple',
-                'category' => 'accessoire',
-                'prix_revient_default' => 120000,
-                'prix_vente_default' => 165000,
-                'stock_minimum' => 3,
-            ],
-            [
-                'name' => 'Smart Folio iPad',
-                'brand' => 'Apple',
-                'category' => 'accessoire',
-                'prix_revient_default' => 25000,
-                'prix_vente_default' => 38000,
-                'stock_minimum' => 5,
-            ],
-            [
-                'name' => 'Adaptateur Lightning vers Jack 3.5mm',
-                'brand' => 'Apple',
-                'category' => 'accessoire',
-                'prix_revient_default' => 2000,
-                'prix_vente_default' => 4000,
-                'stock_minimum' => 15,
-            ],
-            [
-                'name' => 'Écouteurs USB-C Apple',
-                'brand' => 'Apple',
-                'category' => 'accessoire',
-                'prix_revient_default' => 5000,
-                'prix_vente_default' => 8000,
-                'stock_minimum' => 10,
-            ],
-        ];
-
-        foreach ($productModels as $modelData) {
-            $model = ProductModel::create($modelData);
-
-            // Créer quelques produits pour chaque modèle
-            if ($modelData['category'] === 'telephone') {
-                // Créer 2-3 téléphones en stock pour chaque modèle
-                for ($i = 1; $i <= rand(2, 3); $i++) {
-                    Product::create([
-                        'product_model_id' => $model->id,
-                        'imei' => $this->generateFakeImei(),
-                        'state' => ProductState::DISPONIBLE,
-                        'location' => ProductLocation::BOUTIQUE,
-                        'prix_achat' => $modelData['prix_revient_default'],
-                        'prix_vente' => $modelData['prix_vente_default'],
-                        'date_achat' => now()->subDays(rand(1, 30)),
-                        'fournisseur' => 'Fournisseur ' . rand(1, 3),
-                        'condition' => collect(['Neuf', 'Excellent', 'Bon'])->random(),
-                        'created_by' => 1, // Admin
-                    ]);
-                }
-            }
-        }
-
-        $this->command->info('✅ ' . ProductModel::count() . ' modèles de produits créés');
-        $this->command->info('✅ ' . Product::count() . ' produits créés');
-
-        // Créer quelques revendeurs
+    /**
+     * Créer les revendeurs
+     */
+    private function createResellers(): void
+    {
         $resellers = [
             [
                 'name' => 'Jean Revendeur',
@@ -1312,8 +62,171 @@ class TestDataSeeder extends Seeder
         }
 
         $this->command->info('✅ ' . Reseller::count() . ' revendeurs créés');
-        $this->command->info('');
-        $this->command->info('🎉 Données de test créées avec succès!');
+    }
+
+    /**
+     * Créer les modèles de produits et leurs stocks
+     */
+    private function createProductModels(): void
+    {
+        $productModelsData = $this->getProductModelsData();
+
+        foreach ($productModelsData as $modelData) {
+            $model = ProductModel::create([
+                'name' => $modelData['name'],
+                'brand' => $modelData['brand'],
+                'category' => $modelData['category'],
+                'prix_revient_default' => $modelData['prix_revient_default'],
+                'prix_vente_default' => $modelData['prix_vente_default'],
+                'stock_minimum' => $modelData['stock_minimum'],
+            ]);
+
+            // Créer des produits selon la catégorie
+            $this->createProductsForModel($model, $modelData['category']);
+        }
+
+        $this->command->info('✅ ' . ProductModel::count() . ' modèles de produits créés');
+        $this->command->info('✅ ' . Product::count() . ' produits créés');
+        $this->command->info('✅ ' . StockMovement::count() . ' mouvements de stock enregistrés');
+    }
+
+    /**
+     * Créer des produits pour un modèle donné
+     */
+    private function createProductsForModel(ProductModel $model, string $category): void
+    {
+        // Déterminer la quantité selon la catégorie
+        $quantity = match ($category) {
+            'telephone' => rand(2, 4),
+            'tablette' => rand(1, 3),
+            'accessoire' => rand(5, 15),
+        };
+
+        for ($i = 1; $i <= $quantity; $i++) {
+            $this->createSingleProduct($model, $category);
+        }
+    }
+
+    /**
+     * Créer un produit unique avec son mouvement de stock
+     */
+    private function createSingleProduct(ProductModel $model, string $category): void
+    {
+        // Préparer les données du produit
+        $productData = [
+            'product_model_id' => $model->id,
+            'state' => ProductState::DISPONIBLE,
+            'location' => ProductLocation::BOUTIQUE,
+            'prix_achat' => $model->prix_revient_default,
+            'prix_vente' => $model->prix_vente_default,
+            'date_achat' => now()->subDays(rand(1, 60)),
+            'fournisseur' => $this->getRandomSupplier(),
+            'condition' => collect(['Neuf', 'Excellent', 'Bon'])->random(),
+            'created_by' => 1, // Admin
+        ];
+
+        // Ajouter IMEI ou numéro de série selon la catégorie
+        if (in_array($category, ['telephone', 'tablette'])) {
+            $productData['imei'] = $this->generateFakeImei();
+        } else {
+            $productData['serial_number'] = $this->generateSerialNumber($model);
+        }
+
+        // Créer le produit
+        $product = Product::create($productData);
+
+        // Enregistrer le mouvement de stock (réception fournisseur)
+        StockMovement::create([
+            'product_id' => $product->id,
+            'type' => StockMovementType::RECEPTION_FOURNISSEUR,
+            'quantity' => 1,
+            'state_before' => null,
+            'state_after' => ProductState::DISPONIBLE,
+            'location_before' => null,
+            'location_after' => ProductLocation::BOUTIQUE,
+            'notes' => 'Stock initial - Réception fournisseur',
+            'user_id' => 1,
+            'created_at' => $product->date_achat,
+            'updated_at' => $product->date_achat,
+        ]);
+
+        // Ajouter quelques mouvements aléatoires pour certains produits
+        if (rand(1, 100) > 70) {
+            $this->addRandomMovements($product, $category);
+        }
+    }
+
+    /**
+     * Ajouter des mouvements aléatoires à un produit
+     */
+    private function addRandomMovements(Product $product, string $category): void
+    {
+        $movementTypes = [
+            StockMovementType::ENVOI_REPARATION,
+            StockMovementType::RETOUR_REPARATION,
+            StockMovementType::DEPOT_REVENDEUR,
+            StockMovementType::RETOUR_REVENDEUR,
+        ];
+
+        $selectedType = $movementTypes[array_rand($movementTypes)];
+        
+        $stateBefore = $product->state;
+        $locationBefore = $product->location;
+
+        // Déterminer l'état et la localisation après le mouvement
+        [$stateAfter, $locationAfter] = $this->getStateAndLocationForMovement($selectedType);
+
+        StockMovement::create([
+            'product_id' => $product->id,
+            'type' => $selectedType,
+            'quantity' => 1,
+            'state_before' => $stateBefore,
+            'state_after' => $stateAfter,
+            'location_before' => $locationBefore,
+            'location_after' => $locationAfter,
+            'reseller_id' => in_array($selectedType, [
+                StockMovementType::DEPOT_REVENDEUR,
+                StockMovementType::RETOUR_REVENDEUR
+            ]) ? Reseller::inRandomOrder()->first()?->id : null,
+            'notes' => 'Mouvement de test',
+            'user_id' => 1,
+            'created_at' => now()->subDays(rand(1, 30)),
+        ]);
+
+        // Mettre à jour le produit
+        $product->update([
+            'state' => $stateAfter,
+            'location' => $locationAfter,
+        ]);
+    }
+
+    /**
+     * Obtenir l'état et la localisation selon le type de mouvement
+     */
+    private function getStateAndLocationForMovement(StockMovementType $type): array
+    {
+        return match ($type) {
+            StockMovementType::ENVOI_REPARATION => [
+                ProductState::A_REPARER,
+                ProductLocation::EN_REPARATION
+            ],
+            StockMovementType::RETOUR_REPARATION => [
+                ProductState::DISPONIBLE,
+                ProductLocation::BOUTIQUE
+            ],
+            StockMovementType::DEPOT_REVENDEUR => [
+                ProductState::DISPONIBLE,
+                ProductLocation::CHEZ_REVENDEUR
+            ],
+            StockMovementType::RETOUR_REVENDEUR => [
+                ProductState::DISPONIBLE,
+                ProductLocation::BOUTIQUE
+            ],
+            default => [
+                ProductState::DISPONIBLE,
+                ProductLocation::BOUTIQUE
+            ],
+        };
     }
 
     /**
@@ -1322,5 +235,125 @@ class TestDataSeeder extends Seeder
     private function generateFakeImei(): string
     {
         return '35' . rand(1000000, 9999999) . rand(100000, 999999);
+    }
+
+    /**
+     * Générer un numéro de série pour accessoire
+     */
+    private function generateSerialNumber(ProductModel $model): string
+    {
+        $prefix = strtoupper(substr($model->brand, 0, 3));
+        $timestamp = now()->format('ymdHis');
+        $random = strtoupper(substr(md5(uniqid()), 0, 4));
+        
+        return "{$prefix}-{$timestamp}-{$random}";
+    }
+
+    /**
+     * Obtenir un fournisseur aléatoire
+     */
+    private function getRandomSupplier(): string
+    {
+        $suppliers = [
+            'Fournisseur International',
+            'Import Tech SARL',
+            'Digital Supply Co.',
+            'TechSource Bénin',
+            'Global Electronics',
+        ];
+
+        return $suppliers[array_rand($suppliers)];
+    }
+
+    /**
+     * Obtenir les données des modèles de produits
+     */
+    private function getProductModelsData(): array
+    {
+        return [
+            // === TÉLÉPHONES ===
+            // iPhones - Série 7
+            ['name' => 'iPhone 7 32GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 80000, 'prix_vente_default' => 110000, 'stock_minimum' => 2],
+            ['name' => 'iPhone 7 128GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 90000, 'prix_vente_default' => 120000, 'stock_minimum' => 2],
+            ['name' => 'iPhone 7 Plus 32GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 100000, 'prix_vente_default' => 135000, 'stock_minimum' => 2],
+            
+            // iPhones - Série 11
+            ['name' => 'iPhone 11 64GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 250000, 'prix_vente_default' => 320000, 'stock_minimum' => 3],
+            ['name' => 'iPhone 11 128GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 270000, 'prix_vente_default' => 340000, 'stock_minimum' => 3],
+            ['name' => 'iPhone 11 Pro 64GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 320000, 'prix_vente_default' => 410000, 'stock_minimum' => 2],
+            
+            // iPhones - Série 13
+            ['name' => 'iPhone 13 128GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 400000, 'prix_vente_default' => 520000, 'stock_minimum' => 3],
+            ['name' => 'iPhone 13 256GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 430000, 'prix_vente_default' => 550000, 'stock_minimum' => 3],
+            ['name' => 'iPhone 13 Pro 128GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 480000, 'prix_vente_default' => 620000, 'stock_minimum' => 2],
+            
+            // iPhones - Série 14
+            ['name' => 'iPhone 14 128GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 480000, 'prix_vente_default' => 620000, 'stock_minimum' => 3],
+            ['name' => 'iPhone 14 Plus 128GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 530000, 'prix_vente_default' => 680000, 'stock_minimum' => 2],
+            ['name' => 'iPhone 14 Pro 128GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 600000, 'prix_vente_default' => 770000, 'stock_minimum' => 2],
+            ['name' => 'iPhone 14 Pro Max 256GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 700000, 'prix_vente_default' => 880000, 'stock_minimum' => 2],
+            
+            // iPhones - Série 15
+            ['name' => 'iPhone 15 128GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 550000, 'prix_vente_default' => 710000, 'stock_minimum' => 3],
+            ['name' => 'iPhone 15 Plus 256GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 670000, 'prix_vente_default' => 840000, 'stock_minimum' => 2],
+            ['name' => 'iPhone 15 Pro 256GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 750000, 'prix_vente_default' => 940000, 'stock_minimum' => 2],
+            ['name' => 'iPhone 15 Pro Max 512GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 870000, 'prix_vente_default' => 1070000, 'stock_minimum' => 2],
+            
+            // iPhones - Série 16
+            ['name' => 'iPhone 16 128GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 650000, 'prix_vente_default' => 830000, 'stock_minimum' => 3],
+            ['name' => 'iPhone 16 Pro 256GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 850000, 'prix_vente_default' => 1060000, 'stock_minimum' => 2],
+            ['name' => 'iPhone 16 Pro Max 512GB', 'brand' => 'Apple', 'category' => 'telephone', 'prix_revient_default' => 970000, 'prix_vente_default' => 1190000, 'stock_minimum' => 2],
+
+            // SAMSUNG
+            ['name' => 'Samsung Galaxy S21 128GB', 'brand' => 'Samsung', 'category' => 'telephone', 'prix_revient_default' => 300000, 'prix_vente_default' => 400000, 'stock_minimum' => 2],
+            ['name' => 'Samsung Galaxy S22 256GB', 'brand' => 'Samsung', 'category' => 'telephone', 'prix_revient_default' => 410000, 'prix_vente_default' => 530000, 'stock_minimum' => 2],
+            ['name' => 'Samsung Galaxy S23 256GB', 'brand' => 'Samsung', 'category' => 'telephone', 'prix_revient_default' => 480000, 'prix_vente_default' => 620000, 'stock_minimum' => 2],
+            ['name' => 'Samsung Galaxy S24 256GB', 'brand' => 'Samsung', 'category' => 'telephone', 'prix_revient_default' => 560000, 'prix_vente_default' => 720000, 'stock_minimum' => 3],
+            ['name' => 'Samsung Galaxy S24 Ultra 512GB', 'brand' => 'Samsung', 'category' => 'telephone', 'prix_revient_default' => 750000, 'prix_vente_default' => 950000, 'stock_minimum' => 2],
+            ['name' => 'Samsung Galaxy Z Flip 5 256GB', 'brand' => 'Samsung', 'category' => 'telephone', 'prix_revient_default' => 550000, 'prix_vente_default' => 720000, 'stock_minimum' => 2],
+
+            // === TABLETTES ===
+            ['name' => 'iPad 9ème génération 64GB WiFi', 'brand' => 'Apple', 'category' => 'tablette', 'prix_revient_default' => 220000, 'prix_vente_default' => 290000, 'stock_minimum' => 2],
+            ['name' => 'iPad 10ème génération 64GB WiFi', 'brand' => 'Apple', 'category' => 'tablette', 'prix_revient_default' => 280000, 'prix_vente_default' => 370000, 'stock_minimum' => 2],
+            ['name' => 'iPad 10ème génération 256GB WiFi', 'brand' => 'Apple', 'category' => 'tablette', 'prix_revient_default' => 320000, 'prix_vente_default' => 410000, 'stock_minimum' => 2],
+            ['name' => 'iPad Air 5ème génération 64GB WiFi', 'brand' => 'Apple', 'category' => 'tablette', 'prix_revient_default' => 380000, 'prix_vente_default' => 500000, 'stock_minimum' => 2],
+            ['name' => 'iPad Air 5ème génération 256GB WiFi', 'brand' => 'Apple', 'category' => 'tablette', 'prix_revient_default' => 450000, 'prix_vente_default' => 580000, 'stock_minimum' => 2],
+            ['name' => 'iPad Pro 11" M2 128GB WiFi', 'brand' => 'Apple', 'category' => 'tablette', 'prix_revient_default' => 550000, 'prix_vente_default' => 720000, 'stock_minimum' => 2],
+            ['name' => 'iPad Pro 12.9" M2 256GB WiFi', 'brand' => 'Apple', 'category' => 'tablette', 'prix_revient_default' => 750000, 'prix_vente_default' => 970000, 'stock_minimum' => 1],
+            ['name' => 'iPad Mini 6ème génération 64GB WiFi', 'brand' => 'Apple', 'category' => 'tablette', 'prix_revient_default' => 320000, 'prix_vente_default' => 420000, 'stock_minimum' => 2],
+
+            // === ACCESSOIRES ===
+            // Écouteurs
+            ['name' => 'AirPods 2ème génération', 'brand' => 'Apple', 'category' => 'accessoire', 'prix_revient_default' => 50000, 'prix_vente_default' => 70000, 'stock_minimum' => 5],
+            ['name' => 'AirPods 3ème génération', 'brand' => 'Apple', 'category' => 'accessoire', 'prix_revient_default' => 70000, 'prix_vente_default' => 95000, 'stock_minimum' => 5],
+            ['name' => 'AirPods Pro 2', 'brand' => 'Apple', 'category' => 'accessoire', 'prix_revient_default' => 80000, 'prix_vente_default' => 110000, 'stock_minimum' => 5],
+            ['name' => 'Samsung Galaxy Buds 2', 'brand' => 'Samsung', 'category' => 'accessoire', 'prix_revient_default' => 35000, 'prix_vente_default' => 50000, 'stock_minimum' => 5],
+            ['name' => 'Samsung Galaxy Buds 2 Pro', 'brand' => 'Samsung', 'category' => 'accessoire', 'prix_revient_default' => 55000, 'prix_vente_default' => 75000, 'stock_minimum' => 5],
+
+            // Chargeurs
+            ['name' => 'Chargeur iPhone 20W USB-C', 'brand' => 'Apple', 'category' => 'accessoire', 'prix_revient_default' => 5000, 'prix_vente_default' => 8000, 'stock_minimum' => 10],
+            ['name' => 'Chargeur iPhone 30W USB-C', 'brand' => 'Apple', 'category' => 'accessoire', 'prix_revient_default' => 12000, 'prix_vente_default' => 18000, 'stock_minimum' => 8],
+            ['name' => 'Chargeur Samsung 25W USB-C', 'brand' => 'Samsung', 'category' => 'accessoire', 'prix_revient_default' => 4000, 'prix_vente_default' => 7000, 'stock_minimum' => 10],
+            ['name' => 'Chargeur sans fil MagSafe', 'brand' => 'Apple', 'category' => 'accessoire', 'prix_revient_default' => 15000, 'prix_vente_default' => 22000, 'stock_minimum' => 8],
+
+            // Câbles
+            ['name' => 'Câble USB-C vers Lightning 1m', 'brand' => 'Apple', 'category' => 'accessoire', 'prix_revient_default' => 4000, 'prix_vente_default' => 7000, 'stock_minimum' => 15],
+            ['name' => 'Câble USB-C vers Lightning 2m', 'brand' => 'Apple', 'category' => 'accessoire', 'prix_revient_default' => 6000, 'prix_vente_default' => 9000, 'stock_minimum' => 10],
+            ['name' => 'Câble USB-C vers USB-C 1m', 'brand' => 'Apple', 'category' => 'accessoire', 'prix_revient_default' => 4000, 'prix_vente_default' => 7000, 'stock_minimum' => 15],
+
+            // Coques et Protection
+            ['name' => 'Coque Silicone iPhone 13/14', 'brand' => 'Apple', 'category' => 'accessoire', 'prix_revient_default' => 8000, 'prix_vente_default' => 12000, 'stock_minimum' => 10],
+            ['name' => 'Coque Silicone iPhone 15/16', 'brand' => 'Apple', 'category' => 'accessoire', 'prix_revient_default' => 9000, 'prix_vente_default' => 14000, 'stock_minimum' => 10],
+            ['name' => 'Coque Transparente iPhone Universelle', 'brand' => 'Générique', 'category' => 'accessoire', 'prix_revient_default' => 2000, 'prix_vente_default' => 4000, 'stock_minimum' => 20],
+            ['name' => 'Protection écran verre trempé iPhone', 'brand' => 'Générique', 'category' => 'accessoire', 'prix_revient_default' => 2000, 'prix_vente_default' => 4000, 'stock_minimum' => 25],
+            ['name' => 'Protection écran verre trempé Samsung', 'brand' => 'Générique', 'category' => 'accessoire', 'prix_revient_default' => 2000, 'prix_vente_default' => 4000, 'stock_minimum' => 20],
+
+            // Autres
+            ['name' => 'Support voiture magnétique', 'brand' => 'Générique', 'category' => 'accessoire', 'prix_revient_default' => 3000, 'prix_vente_default' => 6000, 'stock_minimum' => 10],
+            ['name' => 'Batterie externe 10000mAh', 'brand' => 'Anker', 'category' => 'accessoire', 'prix_revient_default' => 12000, 'prix_vente_default' => 18000, 'stock_minimum' => 8],
+            ['name' => 'Batterie externe 20000mAh', 'brand' => 'Anker', 'category' => 'accessoire', 'prix_revient_default' => 18000, 'prix_vente_default' => 26000, 'stock_minimum' => 5],
+            ['name' => 'Apple Pencil 2ème génération', 'brand' => 'Apple', 'category' => 'accessoire', 'prix_revient_default' => 50000, 'prix_vente_default' => 70000, 'stock_minimum' => 5],
+            ['name' => 'Smart Folio iPad', 'brand' => 'Apple', 'category' => 'accessoire', 'prix_revient_default' => 25000, 'prix_vente_default' => 38000, 'stock_minimum' => 5],
+        ];
     }
 }

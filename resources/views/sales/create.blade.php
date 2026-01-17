@@ -1,30 +1,34 @@
 <x-app-layout>
     <x-slot name="header">
-        Nouvelle vente
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+            <div class="min-w-0 flex-1">
+                <h2 class="font-semibold text-lg sm:text-xl text-gray-900">Nouvelle vente</h2>
+            </div>
+        </div>
     </x-slot>
 
     <x-slot name="actions">
-        <a href="{{ route('sales.index') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md font-medium text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+        <a href="{{ route('sales.index') }}" class="inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg font-medium text-xs sm:text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors w-full sm:w-auto">
             <i data-lucide="arrow-left" class="w-4 h-4"></i>
-            Retour
+            <span>Retour</span>
         </a>
     </x-slot>
 
     <x-alerts.error :message="session('error')" />
 
     <div class="max-w-5xl mx-auto">
-        <form method="POST" action="{{ route('sales.store') }}" class="space-y-6">
+        <form method="POST" action="{{ route('sales.store') }}" class="space-y-4 sm:space-y-6">
             @csrf
 
             {{-- Sélection du produit --}}
-            <div class="bg-white border border-gray-200 rounded-lg p-6">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
-                        <i data-lucide="package" class="w-5 h-5 text-white"></i>
+            <div class="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+                <div class="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="package" class="w-4 h-4 sm:w-5 sm:h-5 text-white"></i>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Produit à vendre</h3>
-                        <p class="text-xs text-gray-500">Sélectionnez le produit</p>
+                    <div class="min-w-0 flex-1">
+                        <h3 class="text-xs sm:text-sm font-semibold text-gray-900 uppercase tracking-wide">Produit à vendre</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">Sélectionnez le produit</p>
                     </div>
                 </div>
 
@@ -34,35 +38,35 @@
                     <input type="hidden" name="prix_vente" value="{{ $product->prix_vente }}">
                     <input type="hidden" name="prix_achat_produit" value="{{ $product->prix_achat }}">
 
-                    <div class="flex items-start gap-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                        <div class="w-16 h-16 bg-white rounded-lg flex items-center justify-center flex-shrink-0 border border-gray-200">
+                    <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div class="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-lg flex items-center justify-center flex-shrink-0 border border-gray-200 mx-auto sm:mx-0">
                             @php
                                 $categoryIcons = ['telephone' => 'smartphone', 'tablette' => 'tablet', 'pc' => 'monitor', 'accessoire' => 'box'];
-                                $icon = $categoryIcons[$product->productModel->category] ?? 'box';
+                                $icon = $categoryIcons[$product->productModel->category->value] ?? 'box';
                             @endphp
-                            <i data-lucide="{{ $icon }}" class="w-8 h-8 text-gray-600"></i>
+                            <i data-lucide="{{ $icon }}" class="w-6 h-6 sm:w-8 sm:h-8 text-gray-600"></i>
                         </div>
-                        <div class="flex-1">
-                            <h4 class="text-lg font-bold text-gray-900">{{ $product->productModel->name }}</h4>
-                            <p class="text-sm text-gray-500 mt-1">{{ $product->productModel->brand }}</p>
+                        <div class="flex-1 min-w-0 text-center sm:text-left">
+                            <h4 class="text-base sm:text-lg font-bold text-gray-900 break-words">{{ $product->productModel->name }}</h4>
+                            <p class="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1 truncate">{{ $product->productModel->brand }}</p>
 
                             @if($product->imei)
-                                <p class="text-xs font-mono text-gray-500 mt-2">IMEI: {{ $product->imei }}</p>
+                                <p class="text-xs font-mono text-gray-500 mt-2 break-all">IMEI: {{ $product->imei }}</p>
                             @endif
 
-                            <div class="mt-3">
-                                <span class="text-sm font-medium text-gray-700">Prix de vente: </span>
-                                <span class="text-lg font-bold text-gray-900">{{ number_format($product->prix_vente, 0, ',', ' ') }} FCFA</span>
+                            <div class="mt-2 sm:mt-3">
+                                <span class="text-xs sm:text-sm font-medium text-gray-700">Prix de vente: </span>
+                                <span class="text-base sm:text-lg font-bold text-gray-900 break-all">{{ number_format($product->prix_vente, 0, ',', ' ') }} FCFA</span>
                             </div>
                         </div>
                     </div>
                 @else
                     {{-- Sélection du produit --}}
                     <div>
-                        <label for="product_id" class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                        <label for="product_id" class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 sm:mb-2">
                             Produit *
                         </label>
-                        <select name="product_id" id="product_id" required class="block w-full py-2.5 rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 text-sm">
+                        <select name="product_id" id="product_id" required class="block w-full py-2 sm:py-2.5 rounded-lg border-gray-300 shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 text-sm">
                             <option value="">Sélectionner un produit</option>
                             @foreach($availableProducts as $prod)
                                 <option value="{{ $prod->id }}" data-prix="{{ $prod->prix_vente }}" data-achat="{{ $prod->prix_achat }}">
@@ -72,7 +76,7 @@
                                 </option>
                             @endforeach
                         </select>
-                        <x-input-error :messages="$errors->get('product_id')" class="mt-2" />
+                        <x-input-error :messages="$errors->get('product_id')" class="mt-1.5 sm:mt-2" />
                     </div>
 
                     <input type="hidden" name="prix_vente" id="prix_vente" value="{{ old('prix_vente') }}">
@@ -81,62 +85,62 @@
             </div>
 
             {{-- Type de vente --}}
-            <div class="bg-white border border-gray-200 rounded-lg p-6">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
-                        <i data-lucide="tag" class="w-5 h-5 text-white"></i>
+            <div class="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+                <div class="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="tag" class="w-4 h-4 sm:w-5 sm:h-5 text-white"></i>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Type de vente</h3>
-                        <p class="text-xs text-gray-500">Vente directe ou troc</p>
+                    <div class="min-w-0 flex-1">
+                        <h3 class="text-xs sm:text-sm font-semibold text-gray-900 uppercase tracking-wide">Type de vente</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">Vente directe ou troc</p>
                     </div>
                 </div>
 
-                <div class="space-y-3">
-                    <label class="relative flex items-start p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-gray-900 transition-colors has-[:checked]:border-gray-900 has-[:checked]:bg-gray-50">
-                        <input type="radio" name="sale_type" value="achat_direct" checked required class="mt-0.5 rounded-full border-gray-300 text-gray-900 focus:ring-gray-900">
-                        <div class="ml-3">
-                            <span class="block text-sm font-medium text-gray-900">Achat direct</span>
+                <div class="space-y-2 sm:space-y-3">
+                    <label class="relative flex items-start p-3 sm:p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-gray-900 active:border-gray-900 transition-colors has-[:checked]:border-gray-900 has-[:checked]:bg-gray-50">
+                        <input type="radio" name="sale_type" value="achat_direct" checked required class="mt-0.5 rounded-full border-gray-300 text-gray-900 focus:ring-gray-900 flex-shrink-0">
+                        <div class="ml-2 sm:ml-3 min-w-0 flex-1">
+                            <span class="block text-xs sm:text-sm font-medium text-gray-900">Achat direct</span>
                             <span class="block text-xs text-gray-500 mt-0.5">Paiement intégral en espèces</span>
                         </div>
                     </label>
 
-                    <label class="relative flex items-start p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-gray-900 transition-colors has-[:checked]:border-gray-900 has-[:checked]:bg-gray-50">
-                        <input type="radio" name="sale_type" value="troc" required class="mt-0.5 rounded-full border-gray-300 text-gray-900 focus:ring-gray-900">
-                        <div class="ml-3">
-                            <span class="block text-sm font-medium text-gray-900">Troc avec reprise</span>
+                    <label class="relative flex items-start p-3 sm:p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-gray-900 active:border-gray-900 transition-colors has-[:checked]:border-gray-900 has-[:checked]:bg-gray-50">
+                        <input type="radio" name="sale_type" value="troc" required class="mt-0.5 rounded-full border-gray-300 text-gray-900 focus:ring-gray-900 flex-shrink-0">
+                        <div class="ml-2 sm:ml-3 min-w-0 flex-1">
+                            <span class="block text-xs sm:text-sm font-medium text-gray-900">Troc avec reprise</span>
                             <span class="block text-xs text-gray-500 mt-0.5">Reprise d'ancien appareil + complément espèces</span>
                         </div>
                     </label>
                 </div>
-                <x-input-error :messages="$errors->get('sale_type')" class="mt-2" />
+                <x-input-error :messages="$errors->get('sale_type')" class="mt-1.5 sm:mt-2" />
             </div>
 
             {{-- Type de client (Direct ou Revendeur) --}}
-            <div class="bg-white border border-gray-200 rounded-lg p-6">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
-                        <i data-lucide="users" class="w-5 h-5 text-white"></i>
+            <div class="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+                <div class="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="users" class="w-4 h-4 sm:w-5 sm:h-5 text-white"></i>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Type d'acheteur</h3>
-                        <p class="text-xs text-gray-500">Client direct ou revendeur</p>
+                    <div class="min-w-0 flex-1">
+                        <h3 class="text-xs sm:text-sm font-semibold text-gray-900 uppercase tracking-wide">Type d'acheteur</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">Client direct ou revendeur</p>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label class="relative flex items-start p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-gray-900 transition-colors has-[:checked]:border-gray-900 has-[:checked]:bg-gray-50">
-                        <input type="radio" name="buyer_type" value="direct" checked class="mt-0.5 rounded-full border-gray-300 text-gray-900 focus:ring-gray-900">
-                        <div class="ml-3">
-                            <span class="block text-sm font-medium text-gray-900">Client direct</span>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                    <label class="relative flex items-start p-3 sm:p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-gray-900 active:border-gray-900 transition-colors has-[:checked]:border-gray-900 has-[:checked]:bg-gray-50">
+                        <input type="radio" name="buyer_type" value="direct" checked class="mt-0.5 rounded-full border-gray-300 text-gray-900 focus:ring-gray-900 flex-shrink-0">
+                        <div class="ml-2 sm:ml-3 min-w-0 flex-1">
+                            <span class="block text-xs sm:text-sm font-medium text-gray-900">Client direct</span>
                             <span class="block text-xs text-gray-500 mt-0.5">Vente immédiate confirmée</span>
                         </div>
                     </label>
 
-                    <label class="relative flex items-start p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-gray-900 transition-colors has-[:checked]:border-gray-900 has-[:checked]:bg-gray-50">
-                        <input type="radio" name="buyer_type" value="reseller" class="mt-0.5 rounded-full border-gray-300 text-gray-900 focus:ring-gray-900">
-                        <div class="ml-3">
-                            <span class="block text-sm font-medium text-gray-900">Revendeur</span>
+                    <label class="relative flex items-start p-3 sm:p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-gray-900 active:border-gray-900 transition-colors has-[:checked]:border-gray-900 has-[:checked]:bg-gray-50">
+                        <input type="radio" name="buyer_type" value="reseller" class="mt-0.5 rounded-full border-gray-300 text-gray-900 focus:ring-gray-900 flex-shrink-0">
+                        <div class="ml-2 sm:ml-3 min-w-0 flex-1">
+                            <span class="block text-xs sm:text-sm font-medium text-gray-900">Revendeur</span>
                             <span class="block text-xs text-gray-500 mt-0.5">Dépôt en attente de confirmation</span>
                         </div>
                     </label>
@@ -144,22 +148,22 @@
             </div>
 
             {{-- Section Revendeur (cachée par défaut) --}}
-            <div id="reseller-section" class="hidden bg-white border border-gray-200 rounded-lg p-6">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
-                        <i data-lucide="store" class="w-5 h-5 text-white"></i>
+            <div id="reseller-section" class="hidden bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+                <div class="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="store" class="w-4 h-4 sm:w-5 sm:h-5 text-white"></i>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Informations revendeur</h3>
-                        <p class="text-xs text-gray-500">Sélectionnez le revendeur</p>
+                    <div class="min-w-0 flex-1">
+                        <h3 class="text-xs sm:text-sm font-semibold text-gray-900 uppercase tracking-wide">Informations revendeur</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">Sélectionnez le revendeur</p>
                     </div>
                 </div>
 
                 <div>
-                    <label for="reseller_id" class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                    <label for="reseller_id" class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 sm:mb-2">
                         Revendeur
                     </label>
-                    <select name="reseller_id" id="reseller_id" class="block w-full py-2.5 rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 text-sm">
+                    <select name="reseller_id" id="reseller_id" class="block w-full py-2 sm:py-2.5 rounded-lg border-gray-300 shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 text-sm">
                         <option value="">Sélectionner un revendeur</option>
                         @foreach($resellers as $reseller)
                             <option value="{{ $reseller->id }}">{{ $reseller->name }}</option>
@@ -171,114 +175,114 @@
             </div>
 
             {{-- Informations client --}}
-            <div class="bg-white border border-gray-200 rounded-lg p-6">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
-                        <i data-lucide="user" class="w-5 h-5 text-white"></i>
+            <div class="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+                <div class="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="user" class="w-4 h-4 sm:w-5 sm:h-5 text-white"></i>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Informations client</h3>
-                        <p class="text-xs text-gray-500">Coordonnées (optionnel)</p>
+                    <div class="min-w-0 flex-1">
+                        <h3 class="text-xs sm:text-sm font-semibold text-gray-900 uppercase tracking-wide">Informations client</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">Coordonnées (optionnel)</p>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <div>
-                        <label for="client_name" class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                        <label for="client_name" class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 sm:mb-2">
                             Nom du client
                         </label>
-                        <input type="text" name="client_name" id="client_name" value="{{ old('client_name') }}" class="block w-full py-2.5 rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 text-sm" placeholder="Nom complet">
-                        <x-input-error :messages="$errors->get('client_name')" class="mt-2" />
+                        <input type="text" name="client_name" id="client_name" value="{{ old('client_name') }}" class="block w-full py-2 sm:py-2.5 rounded-lg border-gray-300 shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 text-sm" placeholder="Nom complet">
+                        <x-input-error :messages="$errors->get('client_name')" class="mt-1.5 sm:mt-2" />
                     </div>
 
                     <div>
-                        <label for="client_phone" class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                        <label for="client_phone" class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 sm:mb-2">
                             Téléphone
                         </label>
-                        <input type="tel" name="client_phone" id="client_phone" value="{{ old('client_phone') }}" class="block w-full py-2.5 rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 text-sm" placeholder="+229 XX XX XX XX">
-                        <x-input-error :messages="$errors->get('client_phone')" class="mt-2" />
+                        <input type="tel" name="client_phone" id="client_phone" value="{{ old('client_phone') }}" class="block w-full py-2 sm:py-2.5 rounded-lg border-gray-300 shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 text-sm" placeholder="+229 XX XX XX XX">
+                        <x-input-error :messages="$errors->get('client_phone')" class="mt-1.5 sm:mt-2" />
                     </div>
                 </div>
             </div>
 
             {{-- Section Troc (cachée par défaut) --}}
-            <div id="troc-section" class="hidden bg-white border border-gray-200 rounded-lg p-6">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
-                        <i data-lucide="repeat" class="w-5 h-5 text-white"></i>
+            <div id="troc-section" class="hidden bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+                <div class="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="repeat" class="w-4 h-4 sm:w-5 sm:h-5 text-white"></i>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Informations de reprise</h3>
-                        <p class="text-xs text-gray-500">Détails de l'appareil repris + complément espèces</p>
+                    <div class="min-w-0 flex-1">
+                        <h3 class="text-xs sm:text-sm font-semibold text-gray-900 uppercase tracking-wide">Informations de reprise</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">Détails de l'appareil repris + complément espèces</p>
                     </div>
                 </div>
 
                 <input type="hidden" name="has_trade_in" id="has_trade_in" value="0">
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <div>
-                        <label for="trade_in_modele_recu" class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                        <label for="trade_in_modele_recu" class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 sm:mb-2">
                             Modèle reçu *
                         </label>
-                        <input type="text" name="trade_in[modele_recu]" id="trade_in_modele_recu" class="block w-full py-2.5 rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 text-sm" placeholder="Ex: iPhone 12 64GB">
+                        <input type="text" name="trade_in[modele_recu]" id="trade_in_modele_recu" class="block w-full py-2 sm:py-2.5 rounded-lg border-gray-300 shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 text-sm" placeholder="Ex: iPhone 12 64GB">
                     </div>
 
                     <div>
-                        <label for="trade_in_imei_recu" class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                        <label for="trade_in_imei_recu" class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 sm:mb-2">
                             IMEI reçu *
                         </label>
-                        <input type="text" name="trade_in[imei_recu]" id="trade_in_imei_recu" class="block w-full py-2.5 rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 text-sm font-mono" maxlength="15" placeholder="123456789012345">
+                        <input type="text" name="trade_in[imei_recu]" id="trade_in_imei_recu" class="block w-full py-2 sm:py-2.5 rounded-lg border-gray-300 shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 text-sm font-mono" maxlength="15" placeholder="123456789012345">
                     </div>
 
-                    <div class="md:col-span-2 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                        <p class="text-xs font-medium text-gray-700 uppercase tracking-wide mb-3">Calcul du complément</p>
-                        <div class="grid grid-cols-2 gap-4 mb-3">
+                    <div class="md:col-span-2 p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                        <p class="text-xs font-medium text-gray-700 uppercase tracking-wide mb-2 sm:mb-3">Calcul du complément</p>
+                        <div class="grid grid-cols-2 gap-3 sm:gap-4 mb-2 sm:mb-3">
                             <div>
                                 <label class="block text-xs text-gray-500 mb-1">Prix de vente</label>
-                                <p id="prix_vente_display" class="text-lg font-bold text-gray-900">0 FCFA</p>
+                                <p id="prix_vente_display" class="text-base sm:text-lg font-bold text-gray-900 break-all">0 FCFA</p>
                             </div>
                             <div>
                                 <label for="trade_in_valeur_reprise" class="block text-xs text-gray-500 mb-1">Valeur de reprise *</label>
                                 <div class="relative">
-                                    <input type="number" name="trade_in[valeur_reprise]" id="trade_in_valeur_reprise" class="block w-full py-2 pr-16 rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 text-sm font-semibold" min="0" placeholder="0">
-                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <input type="number" name="trade_in[valeur_reprise]" id="trade_in_valeur_reprise" class="block w-full py-2 pr-14 sm:pr-16 rounded-lg border-gray-300 shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 text-sm font-semibold" min="0" placeholder="0">
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:pr-3 pointer-events-none">
                                         <span class="text-xs text-gray-500 font-medium">FCFA</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="pt-3 border-t border-gray-300">
-                            <div class="flex justify-between items-center">
+                        <div class="pt-2 sm:pt-3 border-t border-gray-300">
+                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
                                 <span class="text-xs font-medium text-gray-600 uppercase tracking-wide">Complément espèces à recevoir</span>
-                                <span id="complement_calculated" class="text-xl font-bold text-green-600">0 FCFA</span>
+                                <span id="complement_calculated" class="text-lg sm:text-xl font-bold text-green-600 break-all">0 FCFA</span>
                             </div>
                         </div>
                         <input type="hidden" name="trade_in[complement_especes]" id="trade_in_complement_especes" value="0">
                     </div>
 
                     <div class="md:col-span-2">
-                        <label for="trade_in_etat_recu" class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                        <label for="trade_in_etat_recu" class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5 sm:mb-2">
                             État du produit reçu
                         </label>
-                        <textarea name="trade_in[etat_recu]" id="trade_in_etat_recu" rows="3" class="block w-full py-2.5 rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 text-sm" placeholder="Décrivez l'état général de l'appareil repris..."></textarea>
+                        <textarea name="trade_in[etat_recu]" id="trade_in_etat_recu" rows="3" class="block w-full py-2 sm:py-2.5 rounded-lg border-gray-300 shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 text-sm" placeholder="Décrivez l'état général de l'appareil repris..."></textarea>
                     </div>
                 </div>
             </div>
 
             {{-- Notes --}}
-            <div class="bg-white border border-gray-200 rounded-lg p-6">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
-                        <i data-lucide="file-text" class="w-5 h-5 text-white"></i>
+            <div class="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+                <div class="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="file-text" class="w-4 h-4 sm:w-5 sm:h-5 text-white"></i>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Notes</h3>
-                        <p class="text-xs text-gray-500">Informations complémentaires (optionnel)</p>
+                    <div class="min-w-0 flex-1">
+                        <h3 class="text-xs sm:text-sm font-semibold text-gray-900 uppercase tracking-wide">Notes</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">Informations complémentaires (optionnel)</p>
                     </div>
                 </div>
 
-                <textarea name="notes" id="notes" rows="3" class="block w-full py-2.5 rounded-md border-gray-300 shadow-sm focus:border-gray-900 focus:ring-gray-900 text-sm" placeholder="Notes sur la vente...">{{ old('notes') }}</textarea>
-                <x-input-error :messages="$errors->get('notes')" class="mt-2" />
+                <textarea name="notes" id="notes" rows="3" class="block w-full py-2 sm:py-2.5 rounded-lg border-gray-300 shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 text-sm" placeholder="Notes sur la vente...">{{ old('notes') }}</textarea>
+                <x-input-error :messages="$errors->get('notes')" class="mt-1.5 sm:mt-2" />
             </div>
 
             {{-- Hidden fields --}}
@@ -286,15 +290,17 @@
             <input type="hidden" name="is_confirmed" id="is_confirmed" value="1">
 
             {{-- Actions --}}
-            <div class="flex items-center justify-between gap-4 bg-white border border-gray-200 rounded-lg p-6">
-                <a href="{{ route('sales.index') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md font-medium text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                    Annuler
-                </a>
-                <button type="submit" class="inline-flex items-center gap-2 px-6 py-2 bg-green-600 border border-green-600 rounded-md font-medium text-sm text-white hover:bg-green-700 transition-colors">
-                    <i data-lucide="check-circle" class="w-4 h-4"></i>
-                    Enregistrer la vente
-                </button>
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 sm:pt-6 border-t border-gray-200"">
+                    <a href="{{ route('sales.index') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-medium text-sm text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-all hover:border-gray-400 order-2 sm:order-1">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                        <span>Annuler</span>
+                    </a>
+                    <button type="submit" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-green-600 to-green-700 border border-green-600 rounded-lg font-semibold text-sm text-white hover:from-green-700 hover:to-green-800 active:from-green-800 active:to-green-900 transition-all shadow-sm hover:shadow-md transform hover:-translate-y-0.5 order-1 sm:order-2">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        <span>Enregistrer la vente</span>
+                    </button>
+                </div>
             </div>
         </form>
     </div>

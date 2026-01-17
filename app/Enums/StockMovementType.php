@@ -14,7 +14,7 @@ enum StockMovementType: string
     case RETOUR_CLIENT = 'retour_client';
     case RETOUR_REPARATION = 'retour_reparation'; // Retour de réparation
 
-        // Sorties
+    // Sorties
     case VENTE_DIRECTE = 'vente_directe';
     case VENTE_TROC = 'vente_troc'; // Vente avec troc
     case DEPOT_REVENDEUR = 'depot_revendeur';
@@ -22,12 +22,12 @@ enum StockMovementType: string
     case ENVOI_REPARATION = 'envoi_reparation';
     case RETOUR_FOURNISSEUR = 'retour_fournisseur';
 
-        // Pertes
+    // Pertes
     case CASSE = 'casse';
     case VOL = 'vol';
     case PERTE = 'perte';
 
-        // Corrections
+    // Corrections
     case CORRECTION_PLUS = 'correction_plus';
     case CORRECTION_MOINS = 'correction_moins';
 
@@ -45,7 +45,7 @@ enum StockMovementType: string
 
     public function isDecrement(): bool
     {
-        return !$this->isIncrement();
+        return ! $this->isIncrement();
     }
 
     public function label(): string

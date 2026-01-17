@@ -2,27 +2,30 @@
 
 namespace App\Livewire;
 
-use App\Models\Product;
-use Livewire\Component;
-use App\Enums\ProductState;
-use App\Models\ProductModel;
-use Livewire\WithPagination;
 use App\Enums\ProductLocation;
+use App\Enums\ProductState;
+use App\Models\Product;
+use App\Models\ProductModel;
 use Livewire\Attributes\Computed;
-use Illuminate\Support\Facades\Log;
+use Livewire\Component;
+use Livewire\WithPagination;
 
 class ProductsTable extends Component
 {
     use WithPagination;
 
-    // Étape actuelle (1 = sélection catégorie, 2 = liste produits)
     public $step = 1;
+
     public $selectedCategory = '';
 
     public $search = '';
+
     public $state = '';
+
     public $location = '';
+
     public $product_model_id = '';
+
     public $condition = '';
 
     protected $queryString = [
@@ -83,51 +86,48 @@ class ProductsTable extends Component
     #[Computed]
     public function categories()
     {
-        // Récupérer toutes les catégories distinctes depuis ProductModel
-        $allCategories = ProductModel::whereNull('deleted_at')
+        // OPTIMISATION MAXIMALE: 2 requêtes au total au lieu de N+1
+        // 1. Récupérer les catégories avec le nombre de modèles
+        $categoriesWithModels = ProductModel::selectRaw('
+                category,
+                COUNT(*) as models_count
+            ')
             ->whereNotNull('category')
             ->where('category', '!=', '')
-            ->distinct()
-            ->pluck('category')
-            ->filter();
+            ->whereNull('deleted_at')
+            ->groupBy('category')
+            ->havingRaw('COUNT(*) > 0')
+            ->pluck('models_count', 'category');
 
-        // Log pour debugging
-        Log::info('Categories found:', $allCategories->toArray());
+        if ($categoriesWithModels->isEmpty()) {
+            return collect([]);
+        }
 
-        $categories = $allCategories->map(function ($category) {
-            // Compter les modèles de cette catégorie
-            $modelsCount = ProductModel::where('category', $category)
-                ->whereNull('deleted_at')
-                ->count();
+        // 2. Récupérer TOUS les comptes de produits en UNE SEULE requête
+        $productsCount = Product::join('product_models', 'products.product_model_id', '=', 'product_models.id')
+            ->whereIn('product_models.category', $categoriesWithModels->keys())
+            ->whereNull('products.deleted_at')
+            ->whereNull('product_models.deleted_at')
+            ->selectRaw('product_models.category, COUNT(*) as products_count')
+            ->groupBy('product_models.category')
+            ->pluck('products_count', 'category');
 
-            // Compter les produits de cette catégorie
-            $productsCount = Product::whereHas('productModel', function ($q) use ($category) {
-                $q->where('category', $category);
-            })->whereNull('deleted_at')->count();
-
-            Log::info("Category: {$category}, Models: {$modelsCount}, Products: {$productsCount}");
-
+        // 3. Mapper les résultats
+        return $categoriesWithModels->map(function ($modelsCount, $category) use ($productsCount) {
             return [
                 'value' => $category,
                 'label' => $this->getCategoryLabel($category),
                 'icon' => $this->getCategoryIcon($category),
                 'models_count' => $modelsCount,
-                'products_count' => $productsCount,
+                'products_count' => $productsCount[$category] ?? 0,
             ];
-        })
-            ->filter(function ($cat) {
-                // Ne garder que les catégories qui ont au moins un modèle
-                return $cat['models_count'] > 0;
-            })
-            ->values();
-
-        return $categories;
+        })->values();
     }
 
     #[Computed]
     public function products()
     {
-        if ($this->step !== 2 || !$this->selectedCategory) {
+        if ($this->step !== 2 || ! $this->selectedCategory) {
             return collect();
         }
 
@@ -139,11 +139,11 @@ class ProductsTable extends Component
         if ($this->search) {
             $search = $this->search;
             $query->where(function ($q) use ($search) {
-                $q->where('imei', 'LIKE', '%' . $search . '%')
-                    ->orWhere('serial_number', 'LIKE', '%' . $search . '%')
+                $q->where('imei', 'LIKE', '%'.$search.'%')
+                    ->orWhere('serial_number', 'LIKE', '%'.$search.'%')
                     ->orWhereHas('productModel', function ($q) use ($search) {
-                        $q->where('name', 'LIKE', '%' . $search . '%')
-                            ->orWhere('brand', 'LIKE', '%' . $search . '%');
+                        $q->where('name', 'LIKE', '%'.$search.'%')
+                            ->orWhere('brand', 'LIKE', '%'.$search.'%');
                     });
             });
         }
@@ -170,7 +170,7 @@ class ProductsTable extends Component
     #[Computed]
     public function stats()
     {
-        if ($this->step !== 2 || !$this->selectedCategory) {
+        if ($this->step !== 2 || ! $this->selectedCategory) {
             return [
                 'total' => 0,
                 'available' => 0,
@@ -179,29 +179,35 @@ class ProductsTable extends Component
             ];
         }
 
-        $baseQuery = Product::whereHas('productModel', function ($q) {
+        // OPTIMISATION: Une seule requête au lieu de 4
+        $stats = Product::whereHas('productModel', function ($q) {
             $q->where('category', $this->selectedCategory);
-        });
+        })
+            ->selectRaw('
+            COUNT(*) as total,
+            COUNT(CASE WHEN state = ? AND location = ? THEN 1 END) as available,
+            COUNT(CASE WHEN location = ? THEN 1 END) as chez_revendeur,
+            COUNT(CASE WHEN state = ? THEN 1 END) as a_reparer
+        ', [
+                ProductState::DISPONIBLE->value,
+                ProductLocation::BOUTIQUE->value,
+                ProductLocation::CHEZ_REVENDEUR->value,
+                ProductState::A_REPARER->value,
+            ])
+            ->first();
 
         return [
-            'total' => (clone $baseQuery)->count(),
-            'available' => (clone $baseQuery)
-                ->where('state', ProductState::DISPONIBLE->value)
-                ->where('location', ProductLocation::BOUTIQUE->value)
-                ->count(),
-            'chez_revendeur' => (clone $baseQuery)
-                ->where('location', ProductLocation::CHEZ_REVENDEUR->value)
-                ->count(),
-            'a_reparer' => (clone $baseQuery)
-                ->where('state', ProductState::A_REPARER->value)
-                ->count(),
+            'total' => (int) $stats->total,
+            'available' => (int) $stats->available,
+            'chez_revendeur' => (int) $stats->chez_revendeur,
+            'a_reparer' => (int) $stats->a_reparer,
         ];
     }
 
     #[Computed]
     public function productModels()
     {
-        if ($this->step !== 2 || !$this->selectedCategory) {
+        if ($this->step !== 2 || ! $this->selectedCategory) {
             return collect();
         }
 
@@ -214,36 +220,41 @@ class ProductsTable extends Component
     #[Computed]
     public function states()
     {
-        return collect(ProductState::cases())->map(fn($case) => [
+        return collect(ProductState::cases())->map(fn ($case) => [
             'value' => $case->value,
-            'label' => $case->label()
+            'label' => $case->label(),
         ])->toArray();
     }
 
     #[Computed]
     public function locations()
     {
-        return collect(ProductLocation::cases())->map(fn($case) => [
+        return collect(ProductLocation::cases())->map(fn ($case) => [
             'value' => $case->value,
-            'label' => $case->label()
+            'label' => $case->label(),
         ])->toArray();
     }
 
     #[Computed]
     public function conditions()
     {
-        if ($this->step !== 2 || !$this->selectedCategory) {
+        if ($this->step !== 2 || ! $this->selectedCategory) {
             return [];
         }
 
-        return Product::whereHas('productModel', function ($q) {
-            $q->where('category', $this->selectedCategory);
-        })
-            ->whereNotNull('condition')
-            ->where('condition', '!=', '')
-            ->distinct()
-            ->pluck('condition')
-            ->toArray();
+        // OPTIMISATION: Cache le résultat
+        return cache()->remember(
+            "conditions_{$this->selectedCategory}",
+            now()->addHour(),
+            fn () => Product::whereHas('productModel', function ($q) {
+                $q->where('category', $this->selectedCategory);
+            })
+                ->whereNotNull('condition')
+                ->where('condition', '!=', '')
+                ->distinct()
+                ->pluck('condition')
+                ->toArray()
+        );
     }
 
     private function getCategoryLabel($category)
@@ -270,10 +281,26 @@ class ProductsTable extends Component
 
     public function render()
     {
+        $benchmarks = [];
+
+        $start = microtime(true);
+        $categories = $this->step === 1 ? $this->categories : collect();
+        $benchmarks['categories'] = round((microtime(true) - $start) * 1000, 2);
+
+        $start = microtime(true);
+        $products = $this->step === 2 ? $this->products : collect();
+        $benchmarks['products'] = round((microtime(true) - $start) * 1000, 2);
+
+        $start = microtime(true);
+        $stats = $this->step === 2 ? $this->stats : ['total' => 0, 'available' => 0, 'chez_revendeur' => 0, 'a_reparer' => 0];
+        $benchmarks['stats'] = round((microtime(true) - $start) * 1000, 2);
+
+        logger()->info('Benchmarks', $benchmarks);
+
         return view('livewire.products-table', [
-            'categories' => $this->categories,
-            'products' => $this->products,
-            'stats' => $this->stats,
+            'categories' => $categories,
+            'products' => $products,
+            'stats' => $stats,
             'productModels' => $this->productModels,
             'states' => $this->states,
             'locations' => $this->locations,

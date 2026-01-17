@@ -1,9 +1,9 @@
 <?php
 
-use Livewire\Volt\Volt;
+use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\VerifyEmailController;
+use Livewire\Volt\Volt;
 
 Route::middleware('guest')->group(function () {
     Volt::route('register', 'pages.auth.register')
@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
         Auth::logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();
+
         return redirect('/');
     })->middleware('auth')->name('logout');
 });

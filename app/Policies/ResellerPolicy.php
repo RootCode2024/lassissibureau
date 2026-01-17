@@ -66,7 +66,7 @@ class ResellerPolicy
     public function forceDelete(User $user, Reseller $reseller): bool
     {
         // Seul l'admin peut supprimer définitivement
-        return $user->isAdmin() && !$reseller->hasPendingProducts();
+        return $user->isAdmin() && ! $reseller->hasPendingProducts();
     }
 
     /**

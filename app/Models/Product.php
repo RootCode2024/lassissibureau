@@ -2,21 +2,21 @@
 
 namespace App\Models;
 
-use App\Enums\ProductState;
 use App\Enums\ProductLocation;
-use Spatie\Activitylog\LogOptions;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Eloquent\Model;
-use Spatie\Activitylog\Traits\LogsActivity;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Enums\ProductState;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Product extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'product_model_id',
@@ -144,6 +144,7 @@ class Product extends Model
         if ($this->prix_achat == 0) {
             return 0;
         }
+
         return round(($this->benefice_potentiel / $this->prix_achat) * 100, 2);
     }
 
@@ -231,8 +232,9 @@ class Product extends Model
     public function scopeByState($query, ProductState|array $states)
     {
         if (is_array($states)) {
-            return $query->whereIn('state', array_map(fn($s) => $s->value, $states));
+            return $query->whereIn('state', array_map(fn ($s) => $s->value, $states));
         }
+
         return $query->where('state', $states->value);
     }
 
@@ -242,8 +244,9 @@ class Product extends Model
     public function scopeByLocation($query, ProductLocation|array $locations)
     {
         if (is_array($locations)) {
-            return $query->whereIn('location', array_map(fn($l) => $l->value, $locations));
+            return $query->whereIn('location', array_map(fn ($l) => $l->value, $locations));
         }
+
         return $query->where('location', $locations->value);
     }
 

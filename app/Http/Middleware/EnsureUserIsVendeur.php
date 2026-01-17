@@ -15,7 +15,7 @@ class EnsureUserIsVendeur
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || (!$request->user()->isVendeur() && !$request->user()->isAdmin())) {
+        if (! $request->user() || (! $request->user()->isVendeur() && ! $request->user()->isAdmin())) {
             abort(403, 'Accès refusé. Cette action est réservée aux vendeurs et administrateurs.');
         }
 

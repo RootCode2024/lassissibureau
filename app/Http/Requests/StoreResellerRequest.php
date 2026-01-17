@@ -90,7 +90,7 @@ class StoreResellerRequest extends FormRequest
         }
 
         // Définir is_active par défaut si non fourni
-        if (!$this->has('is_active')) {
+        if (! $this->has('is_active')) {
             $this->merge([
                 'is_active' => true,
             ]);
@@ -109,7 +109,7 @@ class StoreResellerRequest extends FormRequest
      */
     private function cleanPhoneNumber(?string $phone): ?string
     {
-        if (!$phone) {
+        if (! $phone) {
             return null;
         }
 
@@ -118,17 +118,17 @@ class StoreResellerRequest extends FormRequest
 
         // Si commence par 00229, remplacer par +229
         if (str_starts_with($cleaned, '00229')) {
-            $cleaned = '+229' . substr($cleaned, 5);
+            $cleaned = '+229'.substr($cleaned, 5);
         }
 
         // Si commence par 229 sans +, ajouter le +
-        if (str_starts_with($cleaned, '229') && !str_starts_with($cleaned, '+')) {
-            $cleaned = '+' . $cleaned;
+        if (str_starts_with($cleaned, '229') && ! str_starts_with($cleaned, '+')) {
+            $cleaned = '+'.$cleaned;
         }
 
         // Si ne commence pas par + et fait 8 chiffres, ajouter +229
-        if (!str_starts_with($cleaned, '+') && strlen($cleaned) === 8) {
-            $cleaned = '+229' . $cleaned;
+        if (! str_starts_with($cleaned, '+') && strlen($cleaned) === 8) {
+            $cleaned = '+229'.$cleaned;
         }
 
         return $cleaned;

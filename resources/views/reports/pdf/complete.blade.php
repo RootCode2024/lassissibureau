@@ -302,7 +302,7 @@
             @forelse($report['sales'] as $sale)
                 <tr>
                     <td>{{ $sale->created_at->format('d/m') }}</td>
-                    <td>{{ ucfirst($sale->product->productModel->category) }}</td>
+                    <td>{{ ucfirst($sale->product->productModel->category->value) }}</td>
                     <td><strong>{{ $sale->product->productModel->name }}</strong></td>
                     <td>{{ $sale->product->imei ?: $sale->product->serial_number ?: '—' }}</td>
                     <td class="text-right"><strong>{{ number_format($sale->prix_vente, 0, ',', ' ') }}</strong></td>

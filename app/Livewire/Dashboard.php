@@ -2,17 +2,19 @@
 
 namespace App\Livewire;
 
-use App\Models\Sale;
 use App\Models\Product;
 use App\Models\ProductModel;
+use App\Models\Sale;
 use Carbon\Carbon;
-use Livewire\Component;
 use Illuminate\Support\Facades\DB;
+use Livewire\Component;
 
 class Dashboard extends Component
 {
     public $period = '30'; // 7, 30, 90 jours
+
     public $chartData = [];
+
     public $chartLabels = [];
 
     public function mount()
@@ -86,36 +88,36 @@ class Dashboard extends Component
             'sales_today' => Sale::whereDate('date_vente_effective', today())
                 ->where('is_confirmed', true)
                 ->count(),
-                
+
             'revenue_today' => Sale::whereDate('date_vente_effective', today())
                 ->where('is_confirmed', true)
                 ->sum('prix_vente') ?? 0,
-                
+
             'profit_today' => Sale::whereDate('date_vente_effective', today())
                 ->where('is_confirmed', true)
                 ->sum('benefice') ?? 0,
-                
+
             'sales_month' => Sale::whereMonth('date_vente_effective', now()->month)
                 ->whereYear('date_vente_effective', now()->year)
                 ->where('is_confirmed', true)
                 ->count(),
-                
+
             'revenue_month' => Sale::whereMonth('date_vente_effective', now()->month)
                 ->whereYear('date_vente_effective', now()->year)
                 ->where('is_confirmed', true)
                 ->sum('prix_vente') ?? 0,
-                
+
             'profit_month' => Sale::whereMonth('date_vente_effective', now()->month)
                 ->whereYear('date_vente_effective', now()->year)
                 ->where('is_confirmed', true)
                 ->sum('benefice') ?? 0,
-                
+
             'total_products_in_stock' => Product::whereIn('location', ['boutique', 'en_reparation'])
                 ->count(),
-                
+
             'products_low_stock' => $this->getLowStockCountOptimized(),
-            
-            'products_chez_revendeur' => Product::where('location', 'chez_revendeur')
+
+            'products_chez_revendeur' => Product::where('location', 'chez_revendeur')->where('state', 'disponible')
                 ->count(),
         ];
 
@@ -175,6 +177,7 @@ class Dashboard extends Component
         ";
 
         $result = DB::select($sql);
+
         return $result[0]->count ?? 0;
     }
 
@@ -205,12 +208,13 @@ class Dashboard extends Component
         ";
 
         $results = DB::select($sql);
-        
+
         // Convertir les résultats en collection de modèles ProductModel
         return collect($results)->map(function ($row) {
-            $model = new ProductModel();
+            $model = new ProductModel;
             $model->exists = true;
             $model->setRawAttributes((array) $row, true);
+
             return $model;
         });
     }
@@ -241,9 +245,10 @@ class Dashboard extends Component
             ->limit(10)
             ->get()
             ->map(function ($row) {
-                $model = new ProductModel();
+                $model = new ProductModel;
                 $model->exists = true;
                 $model->setRawAttributes((array) $row, true);
+
                 return $model;
             });
     }

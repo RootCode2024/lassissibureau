@@ -58,6 +58,7 @@ class ProductModelController extends Controller
         $productModels->getCollection()->transform(function ($model) {
             $model->current_stock = $model->productsInStock()->count();
             $model->is_low_stock = $model->current_stock <= $model->stock_minimum;
+
             return $model;
         });
 
@@ -106,20 +107,20 @@ class ProductModelController extends Controller
             'total_sold' => $productModel->sold_quantity,
             'at_resellers' => $productModel->reseller_quantity,
             'in_repair' => $productModel->repair_quantity,
-            
+
             // Prix
             'average_purchase_price' => $productModel->productsInStock()->avg('prix_achat') ?? 0,
             'average_sale_price' => $productModel->productsSold()->avg('prix_vente') ?? 0,
-            
+
             // Valeurs
             'stock_value' => $productModel->stock_value,
             'potential_sale_value' => $productModel->stock_sale_value,
             'potential_profit' => $productModel->stock_potential_profit,
-            
+
             // Alertes
             'is_low_stock' => $productModel->isLowStock(),
             'stock_minimum' => $productModel->stock_minimum,
-            
+
             // Bénéfices réalisés
             'total_profit' => $productModel->productsSold()
                 ->join('sales', 'products.id', '=', 'sales.product_id')
@@ -161,7 +162,7 @@ class ProductModelController extends Controller
 
         // Vérifier s'il y a des produits associés
         $productsCount = $productModel->products()->count();
-        
+
         if ($productsCount > 0) {
             return back()->with('error', "Impossible de supprimer ce modèle car {$productsCount} produit(s) l'utilisent.");
         }
@@ -197,16 +198,16 @@ class ProductModelController extends Controller
     private function getLowStockModelsCount(): int
     {
         $lowStockCount = 0;
-        
+
         $productModels = ProductModel::where('is_active', true)->get();
-        
+
         foreach ($productModels as $model) {
             $stockQuantity = $model->productsInStock()->count();
             if ($stockQuantity <= $model->stock_minimum) {
                 $lowStockCount++;
             }
         }
-        
+
         return $lowStockCount;
     }
 

@@ -81,7 +81,7 @@ class StoreProductModelRequest extends FormRequest
         }
 
         // Définir is_active par défaut si non fourni
-        if (!$this->has('is_active')) {
+        if (! $this->has('is_active')) {
             $this->merge([
                 'is_active' => true,
             ]);

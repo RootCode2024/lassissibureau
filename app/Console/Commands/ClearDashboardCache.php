@@ -2,12 +2,13 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Services\DashboardCacheService;
+use Illuminate\Console\Command;
 
 class ClearDashboardCache extends Command
 {
     protected $signature = 'dashboard:clear-cache {--user= : Clear cache for specific user ID}';
+
     protected $description = 'Clear dashboard cache';
 
     public function handle()

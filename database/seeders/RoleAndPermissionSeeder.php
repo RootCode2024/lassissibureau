@@ -75,10 +75,11 @@ class RoleAndPermissionSeeder extends Seeder
             'stock.return',
             'sales.view',
             'sales.create',
+            'returns.manage',
         ]);
 
         $this->command->info('✅ Rôles et permissions créés avec succès!');
-        $this->command->info('   - Admin: ' . $adminRole->permissions->count() . ' permissions');
-        $this->command->info('   - Vendeur: ' . $vendeurRole->permissions->count() . ' permissions');
+        $this->command->info('   - Admin: '.$adminRole->permissions->count().' permissions');
+        $this->command->info('   - Vendeur: '.$vendeurRole->permissions->count().' permissions');
     }
 }

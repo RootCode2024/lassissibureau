@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Enums\ProductState;
 use App\Enums\ProductLocation;
+use App\Enums\ProductState;
 use App\Models\Product;
 use App\Models\User;
 
@@ -86,7 +86,7 @@ class ProductPolicy
     public function sell(User $user, Product $product): bool
     {
         // Doit avoir la permission de créer des ventes
-        if (!$user->can('sales.create')) {
+        if (! $user->can('sales.create')) {
             return false;
         }
 
@@ -113,7 +113,7 @@ class ProductPolicy
     public function sendToRepair(User $user, Product $product): bool
     {
         // Vérifier la permission
-        if (!$user->can('repairs.create')) {
+        if (! $user->can('repairs.create')) {
             return false;
         }
 
@@ -134,7 +134,7 @@ class ProductPolicy
     public function markAsRepaired(User $user, Product $product): bool
     {
         // Vérifier la permission
-        if (!$user->can('repairs.edit')) {
+        if (! $user->can('repairs.edit')) {
             return false;
         }
 
@@ -155,12 +155,12 @@ class ProductPolicy
     public function moveToReseller(User $user, Product $product): bool
     {
         // Vérifier la permission
-        if (!$user->can('sales.create')) {
+        if (! $user->can('sales.create')) {
             return false;
         }
 
         // Le produit doit être disponible
-        if (!$product->isAvailable()) {
+        if (! $product->isAvailable()) {
             return false;
         }
 
@@ -173,7 +173,7 @@ class ProductPolicy
     public function returnFromReseller(User $user, Product $product): bool
     {
         // Vérifier la permission
-        if (!$user->can('sales.edit')) {
+        if (! $user->can('sales.edit')) {
             return false;
         }
 
@@ -200,7 +200,7 @@ class ProductPolicy
     public function markAsLost(User $user, Product $product): bool
     {
         // Vérifier la permission
-        if (!$user->can('stock.adjustment')) {
+        if (! $user->can('stock.adjustment')) {
             return false;
         }
 
@@ -218,7 +218,7 @@ class ProductPolicy
     public function processReturn(User $user, Product $product): bool
     {
         // Vérifier la permission
-        if (!$user->can('returns.create')) {
+        if (! $user->can('returns.create')) {
             return false;
         }
 

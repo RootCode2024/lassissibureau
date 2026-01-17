@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\ProductState;
 use App\Enums\ProductLocation;
+use App\Enums\ProductState;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -163,7 +163,7 @@ class UpdateProductRequest extends FormRequest
                     ProductLocation::EN_REPARATION->value,
                     ProductLocation::FOURNISSEUR->value,
                 ],
-                'message' => 'Un produit vendu ne peut pas être en boutique, en réparation ou chez le fournisseur.'
+                'message' => 'Un produit vendu ne peut pas être en boutique, en réparation ou chez le fournisseur.',
             ],
             // Un produit en réparation doit avoir la localisation correspondante
             [
@@ -172,7 +172,7 @@ class UpdateProductRequest extends FormRequest
                     ProductLocation::CHEZ_CLIENT->value,
                     ProductLocation::FOURNISSEUR->value,
                 ],
-                'message' => 'Un produit à réparer ne peut pas être chez le client ou le fournisseur.'
+                'message' => 'Un produit à réparer ne peut pas être chez le client ou le fournisseur.',
             ],
             // Un produit perdu ne peut pas avoir de localisation précise
             [
@@ -183,7 +183,7 @@ class UpdateProductRequest extends FormRequest
                     ProductLocation::CHEZ_CLIENT->value,
                     ProductLocation::EN_REPARATION->value,
                 ],
-                'message' => 'Un produit perdu ne peut pas avoir une localisation active.'
+                'message' => 'Un produit perdu ne peut pas avoir une localisation active.',
             ],
         ];
 

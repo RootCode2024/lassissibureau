@@ -18,7 +18,7 @@ class RecordPaymentRequest extends FormRequest
                 'required',
                 'numeric',
                 'min:0.01',
-                'max:' . ($this->route('sale')->amount_remaining ?? 999999),
+                'max:'.($this->route('sale')->amount_remaining ?? 999999),
             ],
             'payment_method' => ['required', 'string', 'in:cash,mobile_money,bank_transfer,check'],
             'payment_date' => ['required', 'date', 'before_or_equal:today'],
@@ -44,7 +44,7 @@ class RecordPaymentRequest extends FormRequest
         $validator->after(function ($validator) {
             $sale = $this->route('sale');
 
-            if (!$sale) {
+            if (! $sale) {
                 return;
             }
 
@@ -60,7 +60,7 @@ class RecordPaymentRequest extends FormRequest
             if ($this->amount > $sale->amount_remaining) {
                 $validator->errors()->add(
                     'amount',
-                    'Le montant (' . number_format($this->amount, 0, ',', ' ') . ' FCFA) dépasse le solde restant (' . number_format($sale->amount_remaining, 0, ',', ' ') . ' FCFA).'
+                    'Le montant ('.number_format($this->amount, 0, ',', ' ').' FCFA) dépasse le solde restant ('.number_format($sale->amount_remaining, 0, ',', ' ').' FCFA).'
                 );
             }
         });

@@ -3,14 +3,17 @@
 namespace App\Livewire\Sales;
 
 use App\Models\Sale;
-use Livewire\Component;
 use App\Services\SaleService;
+use Livewire\Component;
 
 class QuickPay extends Component
 {
     public $saleId;
+
     public $amount;
+
     public $paymentMethod = 'cash';
+
     public $notes;
 
     public function mount($saleId)
@@ -33,7 +36,8 @@ class QuickPay extends Component
         $sale = Sale::findOrFail($this->saleId);
 
         if ($this->amount > $sale->amount_remaining) {
-            $this->addError('amount', 'Le montant ne peut pas dépasser le reste à payer (' . number_format($sale->amount_remaining, 0, ',', ' ') . ' FCFA).');
+            $this->addError('amount', 'Le montant ne peut pas dépasser le reste à payer ('.number_format($sale->amount_remaining, 0, ',', ' ').' FCFA).');
+
             return;
         }
 

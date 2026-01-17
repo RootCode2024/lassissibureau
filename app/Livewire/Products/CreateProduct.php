@@ -2,26 +2,28 @@
 
 namespace App\Livewire\Products;
 
-use App\Models\Product;
+use App\Enums\ProductLocation;
+use App\Enums\ProductState;
+use App\Http\Requests\StoreProductRequest;
 use App\Models\ProductModel;
 use App\Services\ProductService;
-use App\Http\Requests\StoreProductRequest;
-use Livewire\Component;
-use Livewire\Attributes\Validate;
-use Livewire\Attributes\Computed;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Computed;
+use Livewire\Component;
 
 class CreateProduct extends Component
 {
     // Informations communes
     public $product_model_id = null;
+    
     public $state = 'disponible';
     public $location = 'boutique';
+    
     public $prix_achat = null;
     public $prix_vente = null;
-    public $condition = '';
+    public $condition = null;
+    
     public $date_achat;
     public $fournisseur = '';
     public $defauts = '';
@@ -30,22 +32,10 @@ class CreateProduct extends Component
     // Produits multiples
     public $products = [];
 
-    // États et localisations disponibles
-    public $states = [
-        ['value' => 'disponible', 'label' => 'Disponible'],
-        ['value' => 'vendu', 'label' => 'Vendu'],
-        ['value' => 'en_reparation', 'label' => 'En réparation'],
-        ['value' => 'reserve', 'label' => 'Réservé'],
-        ['value' => 'retour', 'label' => 'Retour client'],
-    ];
+    // ✅ Protection contre les soumissions multiples
+    public $isSaving = false;
 
-    public $locations = [
-        ['value' => 'boutique', 'label' => 'Boutique'],
-        ['value' => 'entrepot', 'label' => 'Entrepôt'],
-        ['value' => 'atelier', 'label' => 'Atelier'],
-        ['value' => 'transit', 'label' => 'En transit'],
-    ];
-
+    // Conditions disponibles
     public $conditions = [
         'Neuf',
         'Comme neuf',
@@ -61,6 +51,22 @@ class CreateProduct extends Component
         $this->addProduct();
     }
 
+    // ✅ FIX CRITIQUE: Hook Livewire pour convertir string vide en null
+    public function updatedCondition($value)
+    {
+        // Si la valeur est une chaîne vide, on la force à null
+        if ($value === '' || $value === null) {
+            $this->condition = null;
+        }
+    }
+
+    // ✅ PROTECTION: Empêcher la validation automatique lors de la sélection du modèle
+    public function updatedProductModelId($value)
+    {
+        // Ne rien faire ici, juste charger le modèle sélectionné
+        // La validation se fera uniquement lors de la soumission
+    }
+
     #[Computed]
     public function productModels()
     {
@@ -73,8 +79,19 @@ class CreateProduct extends Component
         if (!$this->product_model_id) {
             return null;
         }
-
         return ProductModel::find($this->product_model_id);
+    }
+
+    #[Computed]
+    public function states()
+    {
+        return ProductState::options();
+    }
+
+    #[Computed]
+    public function locations()
+    {
+        return ProductLocation::options();
     }
 
     public function addProduct()
@@ -96,37 +113,25 @@ class CreateProduct extends Component
 
     public function rules()
     {
-        // Récupérer les règles de base depuis la Request
-        $request = new StoreProductRequest();
+        $request = new StoreProductRequest;
         $baseRules = $request->rules();
-        
-        // Adapter les règles pour le contexte Livewire (champs communs)
+
         $rules = [
             'product_model_id' => $baseRules['product_model_id'],
             'state' => $baseRules['state'],
             'location' => $baseRules['location'],
             'prix_achat' => $baseRules['prix_achat'],
             'prix_vente' => $baseRules['prix_vente'],
-            'condition' => $baseRules['condition'],
+            'condition' => ['nullable', 'string', 'in:' . implode(',', $this->conditions)],
             'date_achat' => $baseRules['date_achat'],
             'fournisseur' => $baseRules['fournisseur'],
             'defauts' => $baseRules['defauts'],
             'notes' => $baseRules['notes'],
         ];
 
-        // Validation dynamique des produits (IMEI et Serial)
+        // Validation dynamique des produits
         foreach ($this->products as $index => $product) {
-            // Règles pour l'IMEI adaptées de StoreProductRequest
-            $imeiRules = $baseRules['imei'];
-            
-            // Ajuster la règle unique pour ignorer l'ID actuel lors de la validation (si nécessaire)
-            // Ici c'est de la création, donc unique strict
-            
-            // Pour le callback requiredIf, on doit l'exécuter dans le contexte
-            // Simplification : on laisse la règle Rule::requiredIf telle quelle,
-            // elle évaluera $this->product_model_id qui est accessible dans le composant
-            
-            $rules["products.{$index}.imei"] = $imeiRules;
+            $rules["products.{$index}.imei"] = $baseRules['imei'];
             $rules["products.{$index}.serial_number"] = $baseRules['serial_number'];
         }
 
@@ -135,15 +140,17 @@ class CreateProduct extends Component
 
     public function messages()
     {
-        $request = new StoreProductRequest();
+        $request = new StoreProductRequest;
         $messages = $request->messages();
-        
-        // Ajouter des messages spécifiques pour les index de tableau
+
+        $messages['condition.in'] = 'La condition sélectionnée n\'est pas valide.';
+
+        // Messages pour les produits
         foreach ($this->products as $index => $product) {
-            $messages["products.{$index}.imei.size"] = "L'IMEI du produit " . ($index + 1) . " doit contenir exactement 15 chiffres.";
-            $messages["products.{$index}.imei.unique"] = "L'IMEI du produit " . ($index + 1) . " existe déjà dans la base de données.";
-            $messages["products.{$index}.imei.regex"] = "L'IMEI du produit " . ($index + 1) . " est invalide.";
-            $messages["products.{$index}.serial_number.unique"] = "Le numéro de série du produit " . ($index + 1) . " existe déjà.";
+            $messages["products.{$index}.imei.size"] = "L'IMEI du produit ".($index + 1).' doit contenir exactement 15 chiffres.';
+            $messages["products.{$index}.imei.unique"] = "L'IMEI du produit ".($index + 1).' existe déjà dans la base de données.';
+            $messages["products.{$index}.imei.regex"] = "L'IMEI du produit ".($index + 1).' est invalide.';
+            $messages["products.{$index}.serial_number.unique"] = 'Le numéro de série du produit '.($index + 1).' existe déjà.';
         }
 
         return $messages;
@@ -151,50 +158,67 @@ class CreateProduct extends Component
 
     public function save(ProductService $productService)
     {
-        $this->validate();
+        // ✅ Protection contre double soumission
+        if ($this->isSaving) {
+            return;
+        }
 
-        $userId = Auth::id();
-        $createdProducts = [];
+        $this->isSaving = true;
 
-        DB::transaction(function () use ($productService, $userId, &$createdProducts) {
-            foreach ($this->products as $productData) {
-                // Ne créer que si au moins l'IMEI ou le numéro de série est renseigné, ou si ni l'un ni l'autre n'est requis par le modèle
-                // (Note: la validation a déjà vérifié les champs requis)
-                if (!empty($productData['imei']) || !empty($productData['serial_number'])) {
-                    
-                    // Préparation des données comme dans StoreProductRequest::prepareForValidation
-                    // Nettoyage IMEI
-                    $imei = isset($productData['imei']) ? preg_replace('/[^0-9]/', '', $productData['imei']) : null;
-                    
-                    $data = [
-                        'product_model_id' => $this->product_model_id,
-                        'imei' => $imei,
-                        'serial_number' => $productData['serial_number'] ?? null,
-                        'state' => $this->state,
-                        'location' => $this->location,
-                        'prix_achat' => $this->prix_achat,
-                        'prix_vente' => $this->prix_vente,
-                        'condition' => $this->condition ?: null,
-                        'date_achat' => $this->date_achat ?: null,
-                        'fournisseur' => $this->fournisseur ?: null,
-                        'defauts' => $this->defauts ?: null,
-                        'notes' => $this->notes ?: null,
-                        'created_by' => $userId,
-                    ];
-                    
-                    // Utilisation du Service pour garantir la création du mouvement de stock
-                    $createdProducts[] = $productService->createProduct($data);
+        try {
+            $this->validate();
+
+            $userId = Auth::id();
+            $createdProducts = [];
+            $category = null;
+
+            DB::transaction(function () use ($productService, $userId, &$createdProducts, &$category) {
+                foreach ($this->products as $productData) {
+                    if (!empty($productData['imei']) || !empty($productData['serial_number'])) {
+
+                        $imei = isset($productData['imei']) ? preg_replace('/[^0-9]/', '', $productData['imei']) : null;
+
+                        $data = [
+                            'product_model_id' => $this->product_model_id,
+                            'imei' => $imei,
+                            'serial_number' => $productData['serial_number'] ?? null,
+                            'state' => $this->state,
+                            'location' => $this->location,
+                            'prix_achat' => $this->prix_achat,
+                            'prix_vente' => $this->prix_vente,
+                            'condition' => $this->condition ?: null,
+                            'date_achat' => $this->date_achat ?: null,
+                            'fournisseur' => $this->fournisseur ?: null,
+                            'defauts' => $this->defauts ?: null,
+                            'notes' => $this->notes ?: null,
+                            'created_by' => $userId,
+                        ];
+
+                        $product = $productService->createProduct($data);
+                        $createdProducts[] = $product;
+                        
+                        // Récupérer la catégorie du produit créé
+                        if ($category === null && $product->productModel) {
+                            $category = $product->productModel->category->value;
+                        }
+                    }
                 }
-            }
-        });
+            });
 
-        $count = count($createdProducts);
+            $count = count($createdProducts);
 
-        session()->flash('success', $count > 1
-            ? "{$count} produits ont été créés avec succès (historique de stock généré) !"
-            : "Le produit a été créé avec succès (historique de stock généré) !");
+            session()->flash('success', $count > 1
+                ? "{$count} produits ont été créés avec succès (historique de stock généré) !"
+                : 'Le produit a été créé avec succès (historique de stock généré) !');
 
-        return redirect()->route('products.index');
+            // Redirection avec step=2 et selectedCategory
+            return redirect()->route('products.index', [
+                'step' => 2,
+                'selectedCategory' => $category ?? 'telephone'
+            ]);
+        } finally {
+            $this->isSaving = false;
+        }
     }
 
     public function render()

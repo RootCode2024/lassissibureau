@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreStockMovementRequest;
-use App\Models\Product;
 use App\Models\StockMovement;
 use App\Services\StockService;
 use Illuminate\Http\Request;
@@ -72,12 +71,14 @@ class StockMovementController extends Controller
     public function createReception()
     {
         $this->authorize('create', StockMovement::class);
+
         return view('stock-movements.create-reception');
     }
 
     public function createAdjustment()
     {
         $this->authorize('create', StockMovement::class);
+
         return view('stock-movements.create-adjustment');
     }
 }

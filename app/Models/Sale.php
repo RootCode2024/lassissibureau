@@ -2,22 +2,20 @@
 
 namespace App\Models;
 
-use App\Enums\SaleType;
 use App\Enums\PaymentStatus;
-use App\Enums\ProductState;
-use App\Enums\ProductLocation;
+use App\Enums\SaleType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 class Sale extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'product_id',
@@ -130,6 +128,7 @@ class Sale extends Model
         if ($this->prix_achat_produit == 0) {
             return 0;
         }
+
         return round(($this->benefice / $this->prix_achat_produit) * 100, 2);
     }
 
@@ -207,7 +206,7 @@ class Sale extends Model
     {
         return $this->payment_due_date
             && $this->payment_due_date->isPast()
-            && !$this->isFullyPaid();
+            && ! $this->isFullyPaid();
     }
 
     /**

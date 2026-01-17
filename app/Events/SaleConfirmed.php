@@ -3,11 +3,8 @@
 namespace App\Events;
 
 use App\Models\Sale;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
@@ -25,7 +22,7 @@ class SaleConfirmed
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('sales.' . $this->sale->id),
+            new PrivateChannel('sales.'.$this->sale->id),
         ];
     }
 }

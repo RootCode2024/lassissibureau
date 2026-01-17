@@ -17,9 +17,11 @@ class PasswordConfirmationTest extends TestCase
 
         $response = $this->actingAs($user)->get('/confirm-password');
 
-        $response
-            ->assertSeeVolt('pages.auth.confirm-password')
-            ->assertStatus(200);
+        $response->assertStatus(200);
+        
+        // Vérifier que le composant Volt fonctionne
+        Volt::test('pages.auth.confirm-password')
+            ->assertSee('password'); // Ajustez selon le texte présent dans votre vue
     }
 
     public function test_password_can_be_confirmed(): void

@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\ProductState;
 use App\Enums\ProductLocation;
+use App\Enums\ProductState;
 use App\Models\Product;
 use App\Models\Sale;
 use Illuminate\Foundation\Http\FormRequest;
@@ -39,12 +39,12 @@ class StoreCustomerReturnRequest extends FormRequest
 
                         // Vérifier que le produit est bien vendu
                         if ($product->state !== ProductState::VENDU) {
-                            $fail('Ce produit n\'est pas marqué comme vendu. État actuel: ' . $product->state->label());
+                            $fail('Ce produit n\'est pas marqué comme vendu. État actuel: '.$product->state->label());
                         }
 
                         // Vérifier que le produit est chez le client
                         if ($product->location !== ProductLocation::CHEZ_CLIENT) {
-                            $fail('Ce produit n\'est pas chez le client. Localisation actuelle: ' . $product->location->label());
+                            $fail('Ce produit n\'est pas chez le client. Localisation actuelle: '.$product->location->label());
                         }
                     }
                 },
@@ -74,7 +74,7 @@ class StoreCustomerReturnRequest extends FormRequest
 
             // Si échange
             'exchange_product_id' => [
-                Rule::requiredIf(fn() => $this->is_exchange === true || $this->is_exchange === '1'),
+                Rule::requiredIf(fn () => $this->is_exchange === true || $this->is_exchange === '1'),
                 'nullable',
                 'integer',
                 'exists:products,id',
@@ -84,7 +84,7 @@ class StoreCustomerReturnRequest extends FormRequest
                         $product = Product::find($value);
                         if ($product) {
                             // Vérifier que le produit est disponible
-                            if (!$product->isAvailable()) {
+                            if (! $product->isAvailable()) {
                                 $fail(sprintf(
                                     'Le produit d\'échange sélectionné n\'est pas disponible (état: %s, localisation: %s).',
                                     $product->state->label(),
@@ -98,7 +98,7 @@ class StoreCustomerReturnRequest extends FormRequest
 
             // Si remboursement
             'refund_amount' => [
-                Rule::requiredIf(fn() => $this->is_exchange === false || $this->is_exchange === '0'),
+                Rule::requiredIf(fn () => $this->is_exchange === false || $this->is_exchange === '0'),
                 'nullable',
                 'numeric',
                 'min:0',
@@ -108,7 +108,7 @@ class StoreCustomerReturnRequest extends FormRequest
                     if ($this->original_sale_id && $value) {
                         $sale = Sale::find($this->original_sale_id);
                         if ($sale && $value > $sale->prix_vente) {
-                            $fail('Le montant du remboursement ne peut pas dépasser le prix de vente original (' . number_format($sale->prix_vente, 0, ',', ' ') . ' FCFA).');
+                            $fail('Le montant du remboursement ne peut pas dépasser le prix de vente original ('.number_format($sale->prix_vente, 0, ',', ' ').' FCFA).');
                         }
                     }
                 },
@@ -157,7 +157,7 @@ class StoreCustomerReturnRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         // Si refund_amount n'est pas fourni pour un échange, le mettre à 0
-        if ($this->is_exchange && !$this->has('refund_amount')) {
+        if ($this->is_exchange && ! $this->has('refund_amount')) {
             $this->merge([
                 'refund_amount' => 0,
             ]);
@@ -197,7 +197,7 @@ class StoreCustomerReturnRequest extends FormRequest
             // Si échange, vérifier que le nouveau produit a un prix
             if ($this->is_exchange && $this->exchange_product_id) {
                 $exchangeProduct = Product::find($this->exchange_product_id);
-                if ($exchangeProduct && !$exchangeProduct->prix_vente) {
+                if ($exchangeProduct && ! $exchangeProduct->prix_vente) {
                     $validator->errors()->add(
                         'exchange_product_id',
                         'Le produit d\'échange doit avoir un prix de vente défini.'

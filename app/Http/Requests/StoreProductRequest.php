@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\ProductState;
 use App\Enums\ProductLocation;
+use App\Enums\ProductState;
 use App\Models\ProductModel;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -37,8 +37,10 @@ class StoreProductRequest extends FormRequest
                     // IMEI requis si le modèle est un téléphone
                     if ($this->product_model_id) {
                         $model = ProductModel::find($this->product_model_id);
+
                         return $model && $model->category === 'telephone';
                     }
+
                     return false;
                 }),
             ],
@@ -121,21 +123,21 @@ class StoreProductRequest extends FormRequest
         }
 
         // Définir l'état par défaut si non fourni
-        if (!$this->has('state')) {
+        if (! $this->has('state')) {
             $this->merge([
                 'state' => ProductState::DISPONIBLE->value,
             ]);
         }
 
         // Définir la localisation par défaut si non fournie
-        if (!$this->has('location')) {
+        if (! $this->has('location')) {
             $this->merge([
                 'location' => ProductLocation::BOUTIQUE->value,
             ]);
         }
 
         // Définir la date d'achat par défaut si non fournie
-        if (!$this->has('date_achat')) {
+        if (! $this->has('date_achat')) {
             $this->merge([
                 'date_achat' => now()->format('Y-m-d'),
             ]);
@@ -202,7 +204,7 @@ class StoreProductRequest extends FormRequest
             [
                 'state' => ProductState::A_REPARER->value,
                 'invalid_locations' => [ProductLocation::CHEZ_CLIENT->value],
-                'message' => 'Un produit à réparer ne peut pas être chez le client.'
+                'message' => 'Un produit à réparer ne peut pas être chez le client.',
             ],
             [
                 'state' => ProductState::PERDU->value,
@@ -211,7 +213,7 @@ class StoreProductRequest extends FormRequest
                     ProductLocation::CHEZ_REVENDEUR->value,
                     ProductLocation::CHEZ_CLIENT->value,
                 ],
-                'message' => 'Un produit perdu ne peut pas avoir une localisation active.'
+                'message' => 'Un produit perdu ne peut pas avoir une localisation active.',
             ],
         ];
 

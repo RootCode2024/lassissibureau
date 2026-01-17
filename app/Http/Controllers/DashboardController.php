@@ -106,7 +106,7 @@ class DashboardController extends Controller
     {
         return Sale::today()
             ->confirmed()
-            ->when($user->isVendeur(), fn($q) => $q->where('sold_by', $user->id))
+            ->when($user->isVendeur(), fn ($q) => $q->where('sold_by', $user->id))
             ->count();
     }
 
@@ -117,7 +117,7 @@ class DashboardController extends Controller
     {
         return Sale::today()
             ->confirmed()
-            ->when($user->isVendeur(), fn($q) => $q->where('sold_by', $user->id))
+            ->when($user->isVendeur(), fn ($q) => $q->where('sold_by', $user->id))
             ->sum('prix_vente');
     }
 
@@ -128,9 +128,9 @@ class DashboardController extends Controller
     {
         return Sale::today()
             ->confirmed()
-            ->when($user->isVendeur(), fn($q) => $q->where('sold_by', $user->id))
+            ->when($user->isVendeur(), fn ($q) => $q->where('sold_by', $user->id))
             ->get()
-            ->sum(fn($sale) => $sale->benefice);
+            ->sum(fn ($sale) => $sale->benefice);
     }
 
     /**
@@ -140,7 +140,7 @@ class DashboardController extends Controller
     {
         return Sale::thisMonth()
             ->confirmed()
-            ->when($user->isVendeur(), fn($q) => $q->where('sold_by', $user->id))
+            ->when($user->isVendeur(), fn ($q) => $q->where('sold_by', $user->id))
             ->count();
     }
 
@@ -151,7 +151,7 @@ class DashboardController extends Controller
     {
         return Sale::thisMonth()
             ->confirmed()
-            ->when($user->isVendeur(), fn($q) => $q->where('sold_by', $user->id))
+            ->when($user->isVendeur(), fn ($q) => $q->where('sold_by', $user->id))
             ->sum('prix_vente');
     }
 
@@ -162,8 +162,8 @@ class DashboardController extends Controller
     {
         return Sale::thisMonth()
             ->confirmed()
-            ->when($user->isVendeur(), fn($q) => $q->where('sold_by', $user->id))
+            ->when($user->isVendeur(), fn ($q) => $q->where('sold_by', $user->id))
             ->get()
-            ->sum(fn($sale) => $sale->benefice);
+            ->sum(fn ($sale) => $sale->benefice);
     }
 }

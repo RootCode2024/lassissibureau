@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\Product;
-use App\Enums\ProductState;
-use App\Models\StockMovement;
 use App\Enums\ProductLocation;
+use App\Enums\ProductState;
 use App\Enums\StockMovementType;
+use App\Models\Product;
+use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
 
 class StockService
@@ -20,10 +20,10 @@ class StockService
             $product = Product::findOrFail($data['product_id']);
 
             // Capturer le statut avant si non fourni
-            if (!isset($data['state_before'])) {
+            if (! isset($data['state_before'])) {
                 $data['state_before'] = $product->state->value;
             }
-            if (!isset($data['location_before'])) {
+            if (! isset($data['location_before'])) {
                 $data['location_before'] = $product->location->value;
             }
 
@@ -80,8 +80,8 @@ class StockService
     {
         $movements = StockMovement::betweenDates($startDate, $endDate)->get();
 
-        $increments = $movements->filter(fn($m) => $m->isIncrement());
-        $decrements = $movements->filter(fn($m) => $m->isDecrement());
+        $increments = $movements->filter(fn ($m) => $m->isIncrement());
+        $decrements = $movements->filter(fn ($m) => $m->isDecrement());
 
         return [
             'total_movements' => $movements->count(),

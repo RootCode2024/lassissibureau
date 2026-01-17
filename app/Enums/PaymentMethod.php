@@ -38,7 +38,7 @@ enum PaymentMethod: string
     public static function options(): array
     {
         return array_map(
-            fn(self $method) => [
+            fn (self $method) => [
                 'value' => $method->value,
                 'label' => $method->label(),
                 'icon' => $method->icon(),

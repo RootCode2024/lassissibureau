@@ -1,16 +1,15 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\SaleController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\TradeInController;
-use App\Http\Controllers\ResellerController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ProductModelController;
-use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\CustomerReturnController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductModelController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ResellerController;
+use App\Http\Controllers\SaleController;
+use App\Http\Controllers\StockMovementController;
+use App\Http\Controllers\TradeInController;
+use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Route;
 
 // Pas besoin d'importer les composants Livewire
 
@@ -57,16 +56,18 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
     */
     Route::prefix('products')->name('products.')->group(function () {
         // Lecture (tous)
-        Route::get('/', [ProductController::class, 'index'])->name('index');
+        Route::get('/', function () {
+            return view('products.index-livewire');
+        })->name('index');
         Route::get('/available', [ProductController::class, 'available'])->name('available');
         Route::get('/needs-attention', [ProductController::class, 'needsAttention'])->name('needs-attention');
         Route::get('/search/imei', [ProductController::class, 'searchByImei'])->name('search.imei');
         Route::get('/export', [ProductController::class, 'export'])->name('export');
+        Route::get('/create', App\Livewire\Products\CreateProduct::class)->name('create');
 
         // Création et modification (Admin only)
         Route::middleware('admin')->group(function () {
             // CHANGEMENT ICI : Utiliser Livewire pour la création
-            Route::get('/create', App\Livewire\Products\CreateProduct::class)->name('create');
 
             // La route store n'est plus nécessaire avec Livewire
             // Route::post('/', [ProductController::class, 'store'])->name('store');
@@ -168,7 +169,7 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
     | Customer Returns (Admin only)
     |--------------------------------------------------------------------------
     */
-    Route::middleware('admin')->prefix('returns')->name('returns.')->group(function () {
+    Route::prefix('returns')->name('returns.')->group(function () {
         Route::get('/', [CustomerReturnController::class, 'index'])->name('index');
         Route::get('/create', [CustomerReturnController::class, 'create'])->name('create');
         Route::post('/', [CustomerReturnController::class, 'store'])->name('store');
@@ -189,7 +190,6 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
 
         // Téléchargement PDF
         Route::get('/download-pdf', [ReportController::class, 'downloadPdf'])->name('download-pdf');
-
 
         // Rapports avancés (Admin only)
         Route::middleware('admin')->group(function () {
@@ -239,4 +239,4 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
 | Auth Routes (from Breeze)
 |--------------------------------------------------------------------------
 */
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

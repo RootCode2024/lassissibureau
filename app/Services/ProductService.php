@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Enums\ProductState;
 use App\Enums\ProductLocation;
+use App\Enums\ProductState;
 use App\Enums\StockMovementType;
 use App\Models\Product;
 use App\Models\ProductModel;
@@ -87,7 +87,7 @@ class ProductService
         array $additionalData = []
     ): Product {
         // Au moins un des deux doit être fourni
-        if (!$newState && !$newLocation) {
+        if (! $newState && ! $newLocation) {
             throw new \InvalidArgumentException('Au moins un des paramètres $newState ou $newLocation doit être fourni.');
         }
 
@@ -117,7 +117,7 @@ class ProductService
             ProductLocation::EN_REPARATION => StockMovementType::ENVOI_REPARATION,
             ProductLocation::FOURNISSEUR => StockMovementType::RETOUR_FOURNISSEUR,
             ProductLocation::CHEZ_CLIENT => StockMovementType::VENTE_DIRECTE,
-            default => throw new \InvalidArgumentException("Type de mouvement non défini pour cette localisation"),
+            default => throw new \InvalidArgumentException('Type de mouvement non défini pour cette localisation'),
         };
 
         return $this->changeStateAndLocation(
@@ -180,7 +180,7 @@ class ProductService
     {
         return ProductModel::with(['productsInStock'])
             ->get()
-            ->filter(fn($model) => $model->isLowStock())
+            ->filter(fn ($model) => $model->isLowStock())
             ->map(function ($model) {
                 return [
                     'model' => $model,

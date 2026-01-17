@@ -4,8 +4,8 @@ namespace App\Livewire;
 
 use App\Models\Product;
 use App\Services\SaleService;
-use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Component;
 
 class QuickSell extends Component
 {
@@ -16,12 +16,16 @@ class QuickSell extends Component
 
     // Informations client
     public $client_name = '';
+
     public $client_phone = '';
 
     // Troc
     public $trade_in_modele_recu = '';
+
     public $trade_in_imei_recu = '';
+
     public $trade_in_valeur_reprise = 0;
+
     public $trade_in_etat_recu = '';
 
     // Notes
@@ -54,8 +58,9 @@ class QuickSell extends Component
     public function mount(Product $product)
     {
         // Vérifier que le produit est disponible
-        if (!$product->isAvailable()) {
+        if (! $product->isAvailable()) {
             session()->flash('error', 'Ce produit n\'est pas disponible à la vente.');
+
             return redirect()->route('products.show', $product);
         }
 
@@ -96,6 +101,7 @@ class QuickSell extends Component
                     'trade_in_valeur_reprise',
                     'La valeur de reprise ne peut pas dépasser le prix de vente.'
                 );
+
                 return;
             }
         }
@@ -136,6 +142,7 @@ class QuickSell extends Component
             }
 
             session()->flash('success', 'Vente enregistrée avec succès.');
+
             return redirect()->route('sales.show', $sale);
         } catch (\Exception $e) {
             logger()->error('Erreur lors de la création de la vente', [
@@ -143,7 +150,7 @@ class QuickSell extends Component
                 'product_id' => $this->product->id,
             ]);
 
-            session()->flash('error', 'Erreur lors de l\'enregistrement : ' . $e->getMessage());
+            session()->flash('error', 'Erreur lors de l\'enregistrement : '.$e->getMessage());
         }
     }
 

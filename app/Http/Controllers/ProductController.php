@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\ProductState;
 use App\Enums\ProductLocation;
-use App\Http\Requests\StoreProductRequest;
+use App\Enums\ProductState;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Product;
 use App\Models\ProductModel;
@@ -83,7 +82,6 @@ class ProductController extends Controller
 
     // NOTE: Les méthodes create() et store() ont été supprimées car remplacées par le composant Livewire CreateProduct
 
-
     /**
      * Display the specified resource.
      */
@@ -99,7 +97,7 @@ class ProductController extends Controller
             'tradeIn',
             'customerReturn',
             'creator',
-            'updater'
+            'updater',
         ]);
 
         // Statistiques du produit
@@ -172,7 +170,7 @@ class ProductController extends Controller
 
         $product = $this->productService->findByImei($request->imei);
 
-        if (!$product) {
+        if (! $product) {
             return redirect()
                 ->route('products.index')
                 ->with('error', 'Aucun produit trouvé avec cet IMEI.');
@@ -240,7 +238,7 @@ class ProductController extends Controller
     {
         $this->authorize('sell', $product);
 
-        if (!$product->isAvailable()) {
+        if (! $product->isAvailable()) {
             return redirect()
                 ->route('products.show', $product)
                 ->with('error', 'Ce produit n\'est pas disponible à la vente.');
@@ -269,8 +267,8 @@ class ProductController extends Controller
             ->map(function ($product) {
                 return [
                     'id' => $product->id,
-                    'text' => $product->productModel->name . ' - ' .
-                        ($product->imei ? 'IMEI: ' . $product->imei : 'S/N: ' . $product->serial_number),
+                    'text' => $product->productModel->name.' - '.
+                        ($product->imei ? 'IMEI: '.$product->imei : 'S/N: '.$product->serial_number),
                     'state' => $product->state->label(),
                     'location' => $product->location->label(),
                     'available' => $product->isAvailable(),
@@ -305,7 +303,7 @@ class ProductController extends Controller
 
         $products = $query->get();
 
-        $filename = 'produits_' . now()->format('Y-m-d_His') . '.csv';
+        $filename = 'produits_'.now()->format('Y-m-d_His').'.csv';
 
         $headers = [
             'Content-Type' => 'text/csv',

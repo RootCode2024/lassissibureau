@@ -3,8 +3,8 @@
 namespace App\Providers;
 
 use Carbon\Carbon;
-use Laravel\Telescope\Telescope;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Telescope\Telescope;
 
 class AppServiceProvider extends ServiceProvider
 {

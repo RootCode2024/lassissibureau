@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use App\Enums\ProductState;
 use App\Enums\ProductLocation;
+use App\Enums\ProductCategory;
+use App\Enums\ProductState;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,7 +14,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class ProductModel extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -28,6 +29,7 @@ class ProductModel extends Model
     ];
 
     protected $casts = [
+        'category' => ProductCategory::class,
         'prix_revient_default' => 'decimal:2',
         'prix_vente_default' => 'decimal:2',
         'stock_minimum' => 'integer',

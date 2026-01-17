@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\ProductState;
 use App\Enums\ProductLocation;
+use App\Enums\ProductState;
 use App\Enums\StockMovementType;
 use App\Http\Requests\StoreCustomerReturnRequest;
 use App\Models\CustomerReturn;
@@ -108,7 +108,7 @@ class CustomerReturnController extends Controller
                     'date_vente_effective' => now()->format('Y-m-d'),
                     'is_confirmed' => true,
                     'sold_by' => $validated['processed_by'],
-                    'notes' => 'Échange suite retour - Retour original: #' . $customerReturn->original_sale_id,
+                    'notes' => 'Échange suite retour - Retour original: #'.$customerReturn->original_sale_id,
                 ]);
 
                 $customerReturn->update(['exchange_sale_id' => $newSale->id]);
@@ -134,7 +134,7 @@ class CustomerReturnController extends Controller
                 'state_after' => ProductState::RETOUR->value,
                 'location_after' => ProductLocation::BOUTIQUE->value,
                 'user_id' => $validated['processed_by'],
-                'notes' => 'Retour client - ' . $validated['reason'],
+                'notes' => 'Retour client - '.$validated['reason'],
             ]);
 
             return $customerReturn->fresh(['originalSale', 'returnedProduct', 'exchangeProduct', 'exchangeSale']);
@@ -157,7 +157,7 @@ class CustomerReturnController extends Controller
             'returnedProduct.productModel',
             'exchangeProduct.productModel',
             'exchangeSale',
-            'processor'
+            'processor',
         ]);
 
         return view('returns.show', compact('customerReturn'));
@@ -210,7 +210,7 @@ class CustomerReturnController extends Controller
                         ProductLocation::BOUTIQUE,
                         [
                             'notes' => $validated['notes'] ?? 'Produit défectueux - hors service',
-                            'justification' => 'Retour client - produit irrécupérable'
+                            'justification' => 'Retour client - produit irrécupérable',
                         ]
                     );
                     break;

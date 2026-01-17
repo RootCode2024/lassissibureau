@@ -2,17 +2,17 @@
 
 namespace App\Services;
 
-use App\Models\Sale;
-use App\Enums\SaleType;
-use App\Models\Payment;
-use App\Models\Product;
-use App\Models\TradeIn;
-use App\Enums\ProductState;
 use App\Enums\PaymentStatus;
 use App\Enums\ProductLocation;
+use App\Enums\ProductState;
+use App\Enums\SaleType;
 use App\Enums\StockMovementType;
-use Illuminate\Support\Facades\DB;
+use App\Models\Payment;
+use App\Models\Product;
+use App\Models\Sale;
+use App\Models\TradeIn;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SaleService
 {
@@ -28,7 +28,7 @@ class SaleService
         return DB::transaction(function () use ($data) {
             $product = Product::findOrFail($data['product_id']);
 
-            if (!$product->isAvailable()) {
+            if (! $product->isAvailable()) {
                 throw new \Exception('Ce produit n\'est pas disponible à la vente.');
             }
 
@@ -59,8 +59,8 @@ class SaleService
                 'date_vente_effective' => $data['date_vente_effective'],
                 'is_confirmed' => $data['is_confirmed'],
                 'payment_status' => $paymentStatus,
-                'amount_paid' => $amountPaid,
-                'amount_remaining' => $amountRemaining,
+                'amount_paid' => 0,
+                'amount_remaining' => $data['prix_vente'],
                 'payment_due_date' => $paymentDueDate,
                 'sold_by' => $data['sold_by'],
                 'notes' => $data['notes'] ?? null,
@@ -80,16 +80,17 @@ class SaleService
             }
 
             // Déterminer état et localisation
-            if (isset($data['reseller_id']) && $data['reseller_id']) {
-                $newState = ProductState::DISPONIBLE;
-                $newLocation = ProductLocation::CHEZ_REVENDEUR;
-                $movementType = StockMovementType::DEPOT_REVENDEUR;
-            } else {
+            if ($data['is_confirmed']) {
                 $newState = ProductState::VENDU;
                 $newLocation = ProductLocation::CHEZ_CLIENT;
                 $movementType = $data['sale_type'] === SaleType::ACHAT_DIRECT->value
                     ? StockMovementType::VENTE_DIRECTE
                     : StockMovementType::VENTE_TROC;
+            } else {
+                // Si non confirmé, c'est forcément un dépôt revendeur (car les ventes directes sont toujours confirmées lors de la création)
+                $newState = ProductState::DISPONIBLE;
+                $newLocation = ProductLocation::CHEZ_REVENDEUR;
+                $movementType = StockMovementType::DEPOT_REVENDEUR;
             }
 
             $product->changeStateAndLocation(
@@ -100,7 +101,7 @@ class SaleService
                 [
                     'sale_id' => $sale->id,
                     'reseller_id' => $data['reseller_id'] ?? null,
-                    'notes' => 'Vente créée - ' . $sale->sale_type->label(),
+                    'notes' => 'Vente créée - '.$sale->sale_type->label(),
                 ]
             );
 
@@ -183,7 +184,7 @@ class SaleService
                 'prix_achat' => $tradeIn->valeur_reprise,
                 'prix_vente' => $calculatedPrixVente,
                 'date_achat' => now(),
-                'notes' => $notes ?? 'Reçu en troc - Vente #' . $tradeIn->sale_id,
+                'notes' => $notes ?? 'Reçu en troc - Vente #'.$tradeIn->sale_id,
                 'condition' => 'troc',
                 'defauts' => $tradeIn->etat_recu,
                 'created_by' => Auth::id(),
@@ -202,7 +203,7 @@ class SaleService
                 'state_after' => ProductState::DISPONIBLE->value,
                 'location_after' => ProductLocation::BOUTIQUE->value,
                 'user_id' => Auth::id(),
-                'notes' => 'Produit reçu en troc - Vente #' . $tradeIn->sale_id,
+                'notes' => 'Produit reçu en troc - Vente #'.$tradeIn->sale_id,
             ]);
 
             event(new \App\Events\TradeInProcessed($tradeIn));
@@ -210,7 +211,6 @@ class SaleService
             return $product->fresh('productModel');
         });
     }
-
 
     /**
      * Confirmer une vente revendeur.
@@ -222,7 +222,7 @@ class SaleService
                 throw new \Exception('Cette vente est déjà confirmée.');
             }
 
-            if (!$sale->reseller_id) {
+            if (! $sale->reseller_id) {
                 throw new \Exception('Cette vente n\'est pas une vente revendeur.');
             }
 
@@ -268,20 +268,20 @@ class SaleService
                 throw new \Exception('Impossible de retourner une vente déjà confirmée.');
             }
 
-            if (!$sale->reseller_id) {
+            if (! $sale->reseller_id) {
                 throw new \Exception('Cette vente n\'est pas une vente revendeur.');
             }
 
             // Si des paiements ont été faits, ils doivent être remboursés
             if ($sale->amount_paid > 0) {
                 $sale->update([
-                    'notes' => ($sale->notes ? $sale->notes . "\n" : '')
-                        . "RETOUR REVENDEUR: {$reason}\n"
-                        . "Montant à rembourser: " . number_format($sale->amount_paid, 0, ',', ' ') . " FCFA",
+                    'notes' => ($sale->notes ? $sale->notes."\n" : '')
+                        ."RETOUR REVENDEUR: {$reason}\n"
+                        .'Montant à rembourser: '.number_format($sale->amount_paid, 0, ',', ' ').' FCFA',
                 ]);
             } else {
                 $sale->update([
-                    'notes' => ($sale->notes ? $sale->notes . "\n" : '') . "RETOUR REVENDEUR: " . $reason,
+                    'notes' => ($sale->notes ? $sale->notes."\n" : '').'RETOUR REVENDEUR: '.$reason,
                 ]);
             }
 
@@ -294,7 +294,7 @@ class SaleService
                 [
                     'sale_id' => $sale->id,
                     'reseller_id' => $sale->reseller_id,
-                    'notes' => 'Retour du revendeur: ' . $reason,
+                    'notes' => 'Retour du revendeur: '.$reason,
                 ]
             );
 
@@ -360,10 +360,10 @@ class SaleService
         return [
             'total_sales' => $sales->count(),
             'total_revenue' => $sales->sum('prix_vente'),
-            'total_profit' => $sales->sum(fn($sale) => $sale->benefice),
+            'total_profit' => $sales->sum(fn ($sale) => $sale->benefice),
             'average_sale_price' => $sales->avg('prix_vente') ?? 0,
             'average_profit_per_sale' => $sales->count() > 0
-                ? $sales->sum(fn($sale) => $sale->benefice) / $sales->count()
+                ? $sales->sum(fn ($sale) => $sale->benefice) / $sales->count()
                 : 0,
             'sales_by_type' => $sales->groupBy('sale_type')->map->count()->toArray(),
         ];

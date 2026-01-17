@@ -2,11 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\SaleType;
-use App\Enums\PaymentStatus;
-use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 
 class StoreSaleRequest extends FormRequest
 {
@@ -56,20 +53,20 @@ class StoreSaleRequest extends FormRequest
                 'nullable',
                 'required_if:sale_type,troc',
                 'string',
-                'max:255'
+                'max:255',
             ],
             'trade_in.imei_recu' => [
                 'nullable',
                 'required_if:sale_type,troc',
                 'string',
-                'size:15'
+                'size:15',
             ],
             'trade_in.valeur_reprise' => [
                 'nullable',
                 'required_if:sale_type,troc',
                 'numeric',
                 'min:0',
-                'lte:prix_vente'
+                'lte:prix_vente',
             ],
             'trade_in.complement_especes' => ['nullable', 'numeric'],
             'trade_in.etat_recu' => ['nullable', 'string'],
@@ -152,7 +149,7 @@ class StoreSaleRequest extends FormRequest
             // Vérifier que le produit est disponible
             if ($this->product_id) {
                 $product = \App\Models\Product::find($this->product_id);
-                if ($product && !$product->isAvailable()) {
+                if ($product && ! $product->isAvailable()) {
                     $validator->errors()->add(
                         'product_id',
                         'Ce produit n\'est plus disponible à la vente.'
@@ -163,9 +160,9 @@ class StoreSaleRequest extends FormRequest
             // Si troc, vérifier que tous les champs sont présents
             if ($this->sale_type === 'troc') {
                 if (
-                    !$this->has('trade_in.modele_recu') ||
-                    !$this->has('trade_in.imei_recu') ||
-                    !$this->has('trade_in.valeur_reprise')
+                    ! $this->has('trade_in.modele_recu') ||
+                    ! $this->has('trade_in.imei_recu') ||
+                    ! $this->has('trade_in.valeur_reprise')
                 ) {
                     $validator->errors()->add(
                         'trade_in',
@@ -176,7 +173,7 @@ class StoreSaleRequest extends FormRequest
 
             // Vérifier la cohérence du montant payé
             if ($this->buyer_type === 'reseller' && $this->payment_status === 'partial') {
-                if (!$this->has('amount_paid') || $this->amount_paid <= 0) {
+                if (! $this->has('amount_paid') || $this->amount_paid <= 0) {
                     $validator->errors()->add(
                         'amount_paid',
                         'Le montant payé est requis pour un paiement partiel.'

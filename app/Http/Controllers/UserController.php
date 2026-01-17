@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Enums\UserRole;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -92,7 +92,7 @@ class UserController extends Controller
         $stats = [
             'total_sales' => $user->sales()->confirmed()->count(),
             'total_revenue' => $user->sales()->confirmed()->sum('prix_vente'),
-            'total_profit' => $user->sales()->confirmed()->get()->sum(fn($s) => $s->benefice),
+            'total_profit' => $user->sales()->confirmed()->get()->sum(fn ($s) => $s->benefice),
         ];
 
         return view('users.show', compact('user', 'stats'));
@@ -119,7 +119,7 @@ class UserController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
         ]);
 
         $user->update($validated);

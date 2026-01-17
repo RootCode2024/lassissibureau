@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Sale;
-use App\Models\StockMovement;
 use App\Services\ReportService;
 use Illuminate\Http\Request;
 
@@ -15,23 +13,32 @@ class ReportController extends Controller
 
     /**
      * Rapport par période.
+     * ✅ Vendeurs: Toutes les ventes (pas de filtre), mais SANS bénéfices
+     * ✅ Admin: Tout voir avec bénéfices
      */
     public function daily(Request $request)
     {
+        $user = $request->user();
         $startDate = $request->input('start_date', now()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->format('Y-m-d'));
-        $userId = $request->user()->isVendeur() ? $request->user()->id : null;
 
+        // ✅ Pas de filtrage par userId - vendeurs voient TOUTES les ventes
         $report = $this->reportService->getFullPeriodReport($startDate, $endDate);
 
-        return view('reports.daily', compact('report', 'startDate', 'endDate'));
+        // ✅ Masquer les bénéfices si vendeur
+        $canViewProfits = $user->isAdmin();
+
+        return view('reports.daily', compact('report', 'startDate', 'endDate', 'canViewProfits'));
     }
 
     /**
      * Télécharger le rapport PDF.
+     * ✅ Admin uniquement
      */
     public function downloadPdf(Request $request)
     {
+        abort_unless($request->user()->isAdmin(), 403);
+
         $validated = $request->validate([
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
@@ -46,43 +53,48 @@ class ReportController extends Controller
             ->setPaper('a4', 'portrait');
 
         $filename = "rapport_{$startDate}_{$endDate}.pdf";
+
         return $pdf->download($filename);
     }
 
     /**
      * Rapport hebdomadaire.
+     * ✅ Restrictions identiques
      */
     public function weekly(Request $request)
     {
+        $user = $request->user();
         $startDate = $request->input('start_date', now()->startOfWeek()->format('Y-m-d'));
         $endDate = $request->input('end_date', now()->endOfWeek()->format('Y-m-d'));
-        $userId = $request->user()->isVendeur() ? $request->user()->id : null;
 
-        $report = $this->reportService->getWeeklyReport($startDate, $endDate, $userId);
+        $report = $this->reportService->getWeeklyReport($startDate, $endDate);
+        $canViewProfits = $user->isAdmin();
 
-        return view('reports.weekly', compact('report', 'startDate', 'endDate'));
+        return view('reports.weekly', compact('report', 'startDate', 'endDate', 'canViewProfits'));
     }
 
     /**
      * Rapport mensuel.
+     * ✅ Restrictions identiques
      */
     public function monthly(Request $request)
     {
+        $user = $request->user();
         $year = $request->input('year', now()->year);
         $month = $request->input('month', now()->month);
-        $userId = $request->user()->isVendeur() ? $request->user()->id : null;
 
-        $report = $this->reportService->getMonthlyReport($year, $month, $userId);
+        $report = $this->reportService->getMonthlyReport($year, $month);
+        $canViewProfits = $user->isAdmin();
 
-        return view('reports.monthly', compact('report', 'year', 'month'));
+        return view('reports.monthly', compact('report', 'year', 'month', 'canViewProfits'));
     }
 
     /**
      * Vue d'ensemble (Admin only).
      */
-    public function overview()
+    public function overview(Request $request)
     {
-        $this->authorize('viewAny', \App\Models\Sale::class);
+        abort_unless($request->user()->isAdmin(), 403);
 
         $overview = $this->reportService->getOverview();
 
@@ -92,8 +104,10 @@ class ReportController extends Controller
     /**
      * Rapport produits (Admin only).
      */
-    public function products()
+    public function products(Request $request)
     {
+        abort_unless($request->user()->isAdmin(), 403);
+
         $report = $this->reportService->getProductsReport();
 
         return view('reports.products', compact('report'));
@@ -104,6 +118,8 @@ class ReportController extends Controller
      */
     public function resellers(Request $request)
     {
+        abort_unless($request->user()->isAdmin(), 403);
+
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
@@ -115,8 +131,10 @@ class ReportController extends Controller
     /**
      * Rapport inventaire (Admin only).
      */
-    public function inventory()
+    public function inventory(Request $request)
     {
+        abort_unless($request->user()->isAdmin(), 403);
+
         $report = $this->reportService->getInventoryReport();
 
         return view('reports.inventory', compact('report'));
@@ -127,7 +145,7 @@ class ReportController extends Controller
      */
     public function exportSales(Request $request)
     {
-        $this->authorize('export', \App\Models\Sale::class);
+        abort_unless($request->user()->isAdmin(), 403);
 
         $validated = $request->validate([
             'start_date' => ['required', 'date'],
@@ -135,7 +153,6 @@ class ReportController extends Controller
         ]);
 
         // TODO: Implémenter l'export Excel/CSV avec Laravel Excel
-        // Pour l'instant, retour simple
 
         return back()->with('info', 'Export en cours de développement.');
     }
@@ -145,7 +162,7 @@ class ReportController extends Controller
      */
     public function exportInventory(Request $request)
     {
-        $this->authorize('export', \App\Models\Sale::class);
+        abort_unless($request->user()->isAdmin(), 403);
 
         // TODO: Implémenter l'export Excel/CSV
 

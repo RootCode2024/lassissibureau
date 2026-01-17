@@ -2,14 +2,14 @@
 
 namespace App\Livewire\StockMovements;
 
+use App\Enums\ProductLocation;
+use App\Enums\ProductState;
+use App\Enums\StockMovementType;
 use App\Models\Product;
 use App\Models\ProductModel;
-use App\Enums\ProductState;
-use App\Enums\ProductLocation;
-use App\Enums\StockMovementType;
 use App\Services\StockService;
-use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Component;
 
 class CreateReception extends Component
 {
@@ -18,11 +18,17 @@ class CreateReception extends Component
 
     // Pour nouveau produit
     public $product_model_id = '';
+
     public $imei = '';
+
     public $serial_number = '';
+
     public $prix_achat = '';
+
     public $prix_vente = '';
+
     public $fournisseur = '';
+
     public $date_achat = '';
 
     // Pour produit existant
@@ -30,7 +36,9 @@ class CreateReception extends Component
 
     // Commun
     public $notes = '';
+
     public $condition = '';
+
     public $defauts = '';
 
     // Pour calcul automatique prix vente
@@ -127,7 +135,7 @@ class CreateReception extends Component
                     'quantity' => 1,
                     'state_after' => ProductState::DISPONIBLE->value,
                     'location_after' => ProductLocation::BOUTIQUE->value,
-                    'notes' => 'Réception fournisseur' . ($this->fournisseur ? " - {$this->fournisseur}" : ''),
+                    'notes' => 'Réception fournisseur'.($this->fournisseur ? " - {$this->fournisseur}" : ''),
                     'user_id' => Auth::id(),
                 ]);
 
@@ -156,7 +164,7 @@ class CreateReception extends Component
                 'mode' => $this->mode,
             ]);
 
-            session()->flash('error', 'Erreur lors de l\'enregistrement : ' . $e->getMessage());
+            session()->flash('error', 'Erreur lors de l\'enregistrement : '.$e->getMessage());
         }
     }
 

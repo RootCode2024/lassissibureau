@@ -2,25 +2,11 @@
 
 use function Livewire\Volt\{state};
 
-state(['isMobileMenuOpen' => false]);
-
 ?>
 
 <div>
-    <!-- Mobile Header -->
-    <div class="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-        <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
-            <img src="{{ asset('images/logo.png') }}" alt="{{ config('app.name') }}" class="h-8 w-auto object-contain">
-            <span class="font-bold text-gray-900">{{ config('app.name') }}</span>
-        </a>
-
-        <button @click="$wire.isMobileMenuOpen = !$wire.isMobileMenuOpen" class="p-2 rounded-lg hover:bg-gray-100">
-            <i data-lucide="menu" class="w-6 h-6"></i>
-        </button>
-    </div>
-
     <!-- Sidebar -->
-    <aside class="fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0" :class="{ '-translate-x-full': !$wire.isMobileMenuOpen }">
+    <aside class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0" :class="{ '-translate-x-full': !sidebarOpen }">
 
         <!-- Logo -->
         <div class="h-16 flex items-center px-6 border-b border-gray-200">
@@ -176,18 +162,33 @@ state(['isMobileMenuOpen' => false]);
             </div>
             @endcan
 
-            <!-- Reports -->
+            <!-- Reports - ✅ RESTRICTIONS ICI -->
             <div class="pt-4">
                 <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Rapports</p>
 
-                <a href="{{ route('reports.daily') }}" @class([
-                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                    'bg-red-50 text-red-700' => request()->routeIs('reports.*'),
-                    'text-gray-700 hover:bg-gray-50' => !request()->routeIs('reports.*'),
-                ])>
-                    <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
-                    <span>Statistiques</span>
-                </a>
+                {{-- ✅ Vendeurs: Uniquement leurs propres stats, sans bénéfices --}}
+                @if(auth()->user()->isVendeur())
+                    <a href="{{ route('reports.daily') }}" @class([
+                        'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                        'bg-red-50 text-red-700' => request()->routeIs('reports.daily'),
+                        'text-gray-700 hover:bg-gray-50' => !request()->routeIs('reports.daily'),
+                    ])>
+                        <i data-lucide="calendar" class="w-5 h-5"></i>
+                        <span>Mes ventes</span>
+                    </a>
+                @endif
+
+                {{-- ✅ Admin: Accès complet aux statistiques --}}
+                @if(auth()->user()->isAdmin())
+                    <a href="{{ route('reports.daily') }}" @class([
+                        'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                        'bg-red-50 text-red-700' => request()->routeIs('reports.*'),
+                        'text-gray-700 hover:bg-gray-50' => !request()->routeIs('reports.*'),
+                    ])>
+                        <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                        <span>Statistiques</span>
+                    </a>
+                @endif
             </div>
 
             <!-- Administration -->
@@ -225,5 +226,5 @@ state(['isMobileMenuOpen' => false]);
     </aside>
 
     <!-- Mobile Overlay -->
-    <div x-show="$wire.isMobileMenuOpen" @click="$wire.isMobileMenuOpen = false" class="fixed inset-0 bg-gray-900/50 z-30 lg:hidden" x-transition:enter="transition-opacity ease-linear duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-linear duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"></div>
+    <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-gray-900/50 z-40 lg:hidden" x-transition:enter="transition-opacity ease-linear duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-linear duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"></div>
 </div>

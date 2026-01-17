@@ -106,10 +106,10 @@ class StockMovement extends Model
     public function scopeIncrements($query)
     {
         return $query->whereIn('type', array_map(
-            fn($type) => $type->value,
+            fn ($type) => $type->value,
             array_filter(
                 StockMovementType::cases(),
-                fn($type) => $type->isIncrement()
+                fn ($type) => $type->isIncrement()
             )
         ));
     }
@@ -120,10 +120,10 @@ class StockMovement extends Model
     public function scopeDecrements($query)
     {
         return $query->whereIn('type', array_map(
-            fn($type) => $type->value,
+            fn ($type) => $type->value,
             array_filter(
                 StockMovementType::cases(),
-                fn($type) => $type->isDecrement()
+                fn ($type) => $type->isDecrement()
             )
         ));
     }

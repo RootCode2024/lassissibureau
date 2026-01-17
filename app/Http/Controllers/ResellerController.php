@@ -81,9 +81,9 @@ class ResellerController extends Controller
         $payments = \App\Models\Payment::whereHas('sale', function ($query) use ($reseller) {
             $query->where('reseller_id', $reseller->id);
         })->with(['sale.product.productModel'])
-          ->latest('payment_date')
-          ->take(20)
-          ->get();
+            ->latest('payment_date')
+            ->take(20)
+            ->get();
 
         return view('resellers.show', compact('reseller', 'stats', 'payments'));
     }

@@ -2,18 +2,22 @@
 
 namespace App\Livewire\StockMovements;
 
-use App\Models\Product;
 use App\Enums\StockMovementType;
+use App\Models\Product;
 use App\Services\StockService;
-use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Component;
 
 class CreateAdjustment extends Component
 {
     public $product_id = '';
+
     public $adjustment_type = 'correction'; // 'correction', 'casse', 'vol', 'perte'
+
     public $quantity = 1;
+
     public $justification = '';
+
     public $notes = '';
 
     protected $rules = [
@@ -60,6 +64,7 @@ class CreateAdjustment extends Component
             ]);
 
             session()->flash('success', 'Ajustement de stock enregistré avec succès.');
+
             return redirect()->route('stock-movements.show', $movement);
         } catch (\Exception $e) {
             logger()->error('Erreur lors de l\'ajustement', [
@@ -67,7 +72,7 @@ class CreateAdjustment extends Component
                 'product_id' => $this->product_id,
             ]);
 
-            session()->flash('error', 'Erreur lors de l\'enregistrement : ' . $e->getMessage());
+            session()->flash('error', 'Erreur lors de l\'enregistrement : '.$e->getMessage());
         }
     }
 

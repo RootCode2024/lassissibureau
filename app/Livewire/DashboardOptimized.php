@@ -2,17 +2,19 @@
 
 namespace App\Livewire;
 
-use App\Models\Sale;
 use App\Models\Product;
+use App\Models\Sale;
 use Carbon\Carbon;
-use Livewire\Component;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Livewire\Component;
 
 class DashboardOptimized extends Component
 {
     public $period = '30';
+
     public $chartData = [];
+
     public $chartLabels = [];
 
     // Pour le rafraîchissement automatique
@@ -37,7 +39,7 @@ class DashboardOptimized extends Component
     public function loadChartData()
     {
         $days = (int) $this->period;
-        $cacheKey = "dashboard_chart_{$days}_" . auth()->id();
+        $cacheKey = "dashboard_chart_{$days}_".auth()->id();
 
         // Cache de 5 minutes pour les données du graphique
         $data = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($days) {
@@ -111,7 +113,7 @@ class DashboardOptimized extends Component
      */
     private function getStats()
     {
-        return Cache::remember('dashboard_stats_' . auth()->id(), now()->addMinutes(5), function () {
+        return Cache::remember('dashboard_stats_'.auth()->id(), now()->addMinutes(5), function () {
             return [
                 'sales_today' => Sale::whereDate('date_vente_effective', today())
                     ->where('is_confirmed', true)
@@ -158,8 +160,8 @@ class DashboardOptimized extends Component
     public function refresh()
     {
         // Vider le cache
-        Cache::forget('dashboard_stats_' . auth()->id());
-        Cache::forget("dashboard_chart_{$this->period}_" . auth()->id());
+        Cache::forget('dashboard_stats_'.auth()->id());
+        Cache::forget("dashboard_chart_{$this->period}_".auth()->id());
 
         $this->loadChartData();
         $this->dispatch('chartDataUpdated');
@@ -366,4 +368,3 @@ public function boot(): void
     Sale::observe(SaleObserver::class);
 }
 */
-

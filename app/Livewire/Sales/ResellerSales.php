@@ -2,12 +2,12 @@
 
 namespace App\Livewire\Sales;
 
+use App\Events\SaleConfirmed;
 use App\Models\Sale;
 use App\Services\SaleService;
-use App\Events\SaleConfirmed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Livewire\Attributes\Url;
 
 class ResellerSales extends Component
 {
@@ -20,11 +20,17 @@ class ResellerSales extends Component
     public $status = 'pending';
 
     public $showConfirmModal = false;
+
     public $showReturnModal = false;
+
     public $selectedSale = null;
+
     public $confirmNotes = '';
+
     public $returnReason = '';
+
     public $confirmPaymentAmount = 0;
+
     public $confirmPaymentMethod = 'cash';
 
     public function updatedResellerId()
@@ -55,12 +61,12 @@ class ResellerSales extends Component
 
     public function confirmSale(SaleService $saleService)
     {
-        if (!$this->selectedSale) {
+        if (! $this->selectedSale) {
             return;
         }
 
         $this->validate([
-            'confirmPaymentAmount' => 'nullable|numeric|min:0|max:' . $this->selectedSale->amount_remaining,
+            'confirmPaymentAmount' => 'nullable|numeric|min:0|max:'.$this->selectedSale->amount_remaining,
             'confirmPaymentMethod' => 'required|in:cash,mobile_money,bank_transfer,check',
             'confirmNotes' => 'nullable|string|max:500',
         ]);
@@ -83,7 +89,7 @@ class ResellerSales extends Component
 
             $this->closeConfirmModal();
         } catch (\Exception $e) {
-            session()->flash('error', 'Erreur : ' . $e->getMessage());
+            session()->flash('error', 'Erreur : '.$e->getMessage());
         }
     }
 
@@ -103,7 +109,7 @@ class ResellerSales extends Component
 
     public function returnProduct(SaleService $saleService)
     {
-        if (!$this->selectedSale) {
+        if (! $this->selectedSale) {
             return;
         }
 
@@ -121,7 +127,7 @@ class ResellerSales extends Component
 
             $this->closeReturnModal();
         } catch (\Exception $e) {
-            session()->flash('error', 'Erreur : ' . $e->getMessage());
+            session()->flash('error', 'Erreur : '.$e->getMessage());
         }
     }
 
@@ -161,14 +167,14 @@ class ResellerSales extends Component
         // ]);
 
         return view('livewire.sales.reseller-sales',
-        [
-            'sales' => $sales,
-            'stats' => $stats,
-            'resellers' => $resellers,
-        ])
-        ->title('Vente revendeurs')
-        ->layout('layouts.app', [
-            'header' => 'Ventes revendeurs'
-        ]);
+            [
+                'sales' => $sales,
+                'stats' => $stats,
+                'resellers' => $resellers,
+            ])
+            ->title('Vente revendeurs')
+            ->layout('layouts.app', [
+                    'header' => 'Ventes revendeurs',
+                ]);
     }
 }

@@ -3,8 +3,8 @@
 namespace App\Livewire;
 
 use App\Models\TradeIn;
-use Livewire\Component;
 use Livewire\Attributes\On;
+use Livewire\Component;
 
 class PendingTradeInsBadge extends Component
 {

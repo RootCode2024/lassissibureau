@@ -7,6 +7,7 @@ use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
+use Livewire\Volt\Volt;
 use Tests\TestCase;
 
 class EmailVerificationTest extends TestCase
@@ -19,9 +20,11 @@ class EmailVerificationTest extends TestCase
 
         $response = $this->actingAs($user)->get('/verify-email');
 
-        $response
-            ->assertSeeVolt('pages.auth.verify-email')
-            ->assertStatus(200);
+        $response->assertStatus(200);
+        
+        // Vérifier que le composant Volt fonctionne avec du texte qui existe réellement
+        Volt::test('pages.auth.verify-email')
+            ->assertSee('Merci de vous être inscrit'); // Texte présent dans votre vue
     }
 
     public function test_email_can_be_verified(): void

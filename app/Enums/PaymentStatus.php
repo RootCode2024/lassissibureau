@@ -69,7 +69,7 @@ enum PaymentStatus: string
     public static function options(): array
     {
         return array_map(
-            fn(self $status) => [
+            fn (self $status) => [
                 'value' => $status->value,
                 'label' => $status->label(),
                 'icon' => $status->icon(),

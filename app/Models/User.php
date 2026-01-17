@@ -7,13 +7,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Spatie\Permission\Traits\HasRoles;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles, LogsActivity;
+    use HasFactory, HasRoles, LogsActivity, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -156,7 +156,7 @@ class User extends Authenticatable
         return [
             'total_ventes' => $sales->count(),
             'chiffre_affaires' => $sales->sum('prix_vente'),
-            'benefice_total' => $sales->sum(fn($sale) => $sale->benefice),
+            'benefice_total' => $sales->sum(fn ($sale) => $sale->benefice),
         ];
     }
 }

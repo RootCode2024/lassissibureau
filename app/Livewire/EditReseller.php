@@ -10,9 +10,13 @@ class EditReseller extends Component
     public Reseller $reseller;
 
     public $name = '';
+
     public $phone = '';
+
     public $address = '';
+
     public $notes = '';
+
     public $is_active = true;
 
     protected $rules = [
@@ -52,6 +56,7 @@ class EditReseller extends Component
             ]);
 
             session()->flash('success', 'Revendeur mis à jour avec succès.');
+
             return redirect()->route('resellers.show', $this->reseller);
         } catch (\Exception $e) {
             logger()->error('Erreur lors de la mise à jour du revendeur', [
@@ -59,7 +64,7 @@ class EditReseller extends Component
                 'reseller_id' => $this->reseller->id,
             ]);
 
-            session()->flash('error', 'Erreur lors de la mise à jour : ' . $e->getMessage());
+            session()->flash('error', 'Erreur lors de la mise à jour : '.$e->getMessage());
         }
     }
 
@@ -67,12 +72,14 @@ class EditReseller extends Component
     {
         if ($this->reseller->hasPendingProducts()) {
             session()->flash('error', 'Impossible de supprimer ce revendeur car il a des produits en cours.');
+
             return;
         }
 
         try {
             $this->reseller->delete();
             session()->flash('success', 'Revendeur supprimé avec succès.');
+
             return redirect()->route('resellers.index');
         } catch (\Exception $e) {
             logger()->error('Erreur lors de la suppression du revendeur', [
@@ -80,7 +87,7 @@ class EditReseller extends Component
                 'reseller_id' => $this->reseller->id,
             ]);
 
-            session()->flash('error', 'Erreur lors de la suppression : ' . $e->getMessage());
+            session()->flash('error', 'Erreur lors de la suppression : '.$e->getMessage());
         }
     }
 

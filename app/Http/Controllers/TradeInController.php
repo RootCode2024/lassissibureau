@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TradeIn;
 use App\Models\ProductModel;
+use App\Models\TradeIn;
 use App\Services\SaleService;
 use Illuminate\Http\Request;
 
@@ -80,7 +80,7 @@ class TradeInController extends Controller
             return redirect()
                 ->back()
                 ->withInput()
-                ->with('error', 'Erreur : ' . $e->getMessage());
+                ->with('error', 'Erreur : '.$e->getMessage());
         }
     }
 }

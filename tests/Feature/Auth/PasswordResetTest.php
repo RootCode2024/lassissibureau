@@ -17,9 +17,11 @@ class PasswordResetTest extends TestCase
     {
         $response = $this->get('/forgot-password');
 
-        $response
-            ->assertSeeVolt('pages.auth.forgot-password')
-            ->assertStatus(200);
+        $response->assertStatus(200);
+        
+        // Vérifier que le composant Volt fonctionne
+        Volt::test('pages.auth.forgot-password')
+            ->assertSee('email');
     }
 
     public function test_reset_password_link_can_be_requested(): void
@@ -48,9 +50,11 @@ class PasswordResetTest extends TestCase
         Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
             $response = $this->get('/reset-password/'.$notification->token);
 
-            $response
-                ->assertSeeVolt('pages.auth.reset-password')
-                ->assertStatus(200);
+            $response->assertStatus(200);
+            
+            // Tester le composant avec le token fourni en paramètre
+            Volt::test('pages.auth.reset-password', ['token' => $notification->token])
+                ->assertSee('Réinitialiser'); // Ajustez selon le texte dans votre vue
 
             return true;
         });

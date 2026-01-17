@@ -78,7 +78,7 @@ enum ProductState: string
     public static function options(): array
     {
         return array_map(
-            fn(self $state) => [
+            fn (self $state) => [
                 'value' => $state->value,
                 'label' => $state->label(),
             ],

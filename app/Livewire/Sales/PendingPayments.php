@@ -2,12 +2,12 @@
 
 namespace App\Livewire\Sales;
 
-use App\Models\Sale;
 use App\Enums\PaymentStatus;
-use Livewire\Component;
-use Livewire\WithPagination;
+use App\Models\Sale;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
+use Livewire\Component;
+use Livewire\WithPagination;
 
 class PendingPayments extends Component
 {
@@ -26,7 +26,9 @@ class PendingPayments extends Component
     public $sort_direction = 'asc';
 
     public $selectedSaleId = null;
+
     public $showQuickPayModal = false;
+
     public $quickPayAmount = 0;
 
     public function mount()
@@ -57,7 +59,7 @@ class PendingPayments extends Component
     public function openQuickPay($saleId)
     {
         $sale = Sale::find($saleId);
-        
+
         if ($sale) {
             $this->selectedSaleId = $saleId;
             $this->quickPayAmount = $sale->amount_remaining;
@@ -131,9 +133,9 @@ class PendingPayments extends Component
             'stats' => $stats,
             'resellers' => $resellers,
         ])
-        ->title('Paiements en attente')
-        ->layout('layouts.app', [
-            'header' => 'Paiements en attente'
-        ]);
+            ->title('Paiements en attente')
+            ->layout('layouts.app', [
+                'header' => 'Paiements en attente',
+            ]);
     }
 }
