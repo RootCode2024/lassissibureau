@@ -127,6 +127,12 @@ $toggleMobileSearch = function() {
                                 <i data-lucide="user" class="w-4 h-4"></i>
                                 <span>Mon profil</span>
                             </a>
+                            @if(auth()->user()->isAdmin())
+                                <a href="{{ route('imports.index') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors">
+                                    <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                                    <span>Importer données</span>
+                                </a>
+                            @endif
                             <hr class="my-1 border-gray-700">
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf

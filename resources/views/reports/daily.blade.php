@@ -51,15 +51,21 @@
 
                     {{-- ✅ Bouton PDF - VISIBLE UNIQUEMENT POUR ADMIN --}}
                     @if($canViewProfits)
-                    <div class="flex items-end">
-                        <a href="{{ route('reports.download-pdf', ['start_date' => $startDate, 'end_date' => $endDate]) }}" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 active:bg-red-800 transition-all shadow-md hover:shadow-lg">
-                            <i data-lucide="download" class="w-4 h-4"></i>
+                    <div class="flex items-end gap-2">
+                        <a href="{{ route('reports.download-pdf', ['start_date' => $startDate, 'end_date' => $endDate]) }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 active:bg-red-800 transition-all shadow-md hover:shadow-lg">
+                            <i data-lucide="file-text" class="w-4 h-4"></i>
                             <span>PDF</span>
                         </a>
+                        
+                        <button type="submit" form="export-sales-form" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 active:bg-green-800 transition-all shadow-md hover:shadow-lg">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                            <span>Excel</span>
+                        </button>
                     </div>
                     @endif
                 </div>
 
+                {{-- Hidden Export Form --}}
                 {{-- Raccourcis --}}
                 <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-blue-200">
                     <span class="text-xs font-medium text-blue-700">Raccourcis:</span>
@@ -69,6 +75,16 @@
                     <button type="button" onclick="setThisMonth()" class="px-2.5 sm:px-3 py-1 bg-white hover:bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200 rounded-lg transition-colors">Ce mois</button>
                 </div>
             </form>
+            
+            {{-- Hidden Export Form --}}
+            @if($canViewProfits)
+            <form id="export-sales-form" method="POST" action="{{ route('reports.export.sales') }}" class="hidden">
+                @csrf
+                <input type="hidden" name="start_date" value="{{ $startDate }}">
+                <input type="hidden" name="end_date" value="{{ $endDate }}">
+            </form>
+            @endif
+            {{-- End Hidden Form --}}
         </div>
 
         {{-- En-tête du rapport --}}

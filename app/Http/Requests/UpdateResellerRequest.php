@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class UpdateResellerRequest extends FormRequest
@@ -111,7 +112,7 @@ class UpdateResellerRequest extends FormRequest
         }
 
         // Garder uniquement les chiffres et le +
-        $cleaned = preg_replace('/[^0-9+]/', '', $phone);
+        $cleaned = Str::replaceMatches('/[^0-9+]/', '', $phone);
 
         // Si commence par 00229, remplacer par +229
         if (str_starts_with($cleaned, '00229')) {

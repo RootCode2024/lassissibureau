@@ -9,6 +9,7 @@ use App\Models\ProductModel;
 use App\Services\ProductService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -176,7 +177,7 @@ class CreateProduct extends Component
                 foreach ($this->products as $productData) {
                     if (!empty($productData['imei']) || !empty($productData['serial_number'])) {
 
-                        $imei = isset($productData['imei']) ? preg_replace('/[^0-9]/', '', $productData['imei']) : null;
+                        $imei = isset($productData['imei']) ? Str::replaceMatches('/[^0-9]/', '', $productData['imei']) : null;
 
                         $data = [
                             'product_model_id' => $this->product_model_id,

@@ -8,6 +8,7 @@ use App\Enums\StockMovementType;
 use App\Models\Product;
 use App\Models\ProductModel;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ProductService
 {
@@ -166,7 +167,7 @@ class ProductService
     public function findByImei(string $imei): ?Product
     {
         // Nettoyer l'IMEI
-        $cleanImei = preg_replace('/[^0-9]/', '', $imei);
+        $cleanImei = Str::replaceMatches('/[^0-9]/', '', $imei);
 
         return Product::with(['productModel', 'sale', 'stockMovements'])
             ->where('imei', $cleanImei)

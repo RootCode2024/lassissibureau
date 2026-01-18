@@ -6,6 +6,7 @@ use App\Enums\ProductLocation;
 use App\Enums\ProductState;
 use App\Models\ProductModel;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class StoreProductRequest extends FormRequest
@@ -118,7 +119,7 @@ class StoreProductRequest extends FormRequest
         // Nettoyer l'IMEI (retirer espaces et tirets)
         if ($this->has('imei') && $this->imei) {
             $this->merge([
-                'imei' => preg_replace('/[^0-9]/', '', $this->imei),
+                'imei' => Str::replaceMatches('/[^0-9]/', '', $this->imei),
             ]);
         }
 

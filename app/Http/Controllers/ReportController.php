@@ -152,9 +152,10 @@ class ReportController extends Controller
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
         ]);
 
-        // TODO: Implémenter l'export Excel/CSV avec Laravel Excel
-
-        return back()->with('info', 'Export en cours de développement.');
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\SalesExport($validated['start_date'], $validated['end_date']),
+            "ventes_{$validated['start_date']}_{$validated['end_date']}.xlsx"
+        );
     }
 
     /**
@@ -164,8 +165,9 @@ class ReportController extends Controller
     {
         abort_unless($request->user()->isAdmin(), 403);
 
-        // TODO: Implémenter l'export Excel/CSV
-
-        return back()->with('info', 'Export en cours de développement.');
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\InventoryExport,
+            'inventaire_'.now()->format('Y-m-d').'.xlsx'
+        );
     }
 }

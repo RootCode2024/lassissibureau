@@ -245,6 +245,19 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function () {
     */
     Route::middleware('admin')->get('/activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index'])->name('activity-logs.index');
 
+    /*
+    |--------------------------------------------------------------------------
+    | Data Imports (Admin only)
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('admin')->prefix('imports')->name('imports.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ImportController::class, 'index'])->name('index');
+        Route::post('/models', [\App\Http\Controllers\ImportController::class, 'storeModels'])->name('models');
+        Route::post('/products', [\App\Http\Controllers\ImportController::class, 'storeProducts'])->name('products');
+        Route::post('/resellers', [\App\Http\Controllers\ImportController::class, 'storeResellers'])->name('resellers');
+        Route::get('/template/{type}', [\App\Http\Controllers\ImportController::class, 'downloadTemplate'])->name('template');
+    });
+
 });
 
 /*

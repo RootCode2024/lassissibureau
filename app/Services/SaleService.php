@@ -26,7 +26,8 @@ class SaleService
     public function createSale(array $data): Sale
     {
         return DB::transaction(function () use ($data) {
-            $product = Product::findOrFail($data['product_id']);
+            // Verrouiller le produit pour éviter les conditions de course (double vente)
+            $product = Product::lockForUpdate()->findOrFail($data['product_id']);
 
             if (! $product->isAvailable()) {
                 throw new \Exception('Ce produit n\'est pas disponible à la vente.');
@@ -218,6 +219,10 @@ class SaleService
     public function confirmResellerSale(Sale $sale, array $data = []): Sale
     {
         return DB::transaction(function () use ($sale, $data) {
+            // Verrouiller la vente et le produit
+            $sale = Sale::lockForUpdate()->findOrFail($sale->id);
+            $product = Product::lockForUpdate()->findOrFail($sale->product_id);
+
             if ($sale->is_confirmed) {
                 throw new \Exception('Cette vente est déjà confirmée.');
             }
